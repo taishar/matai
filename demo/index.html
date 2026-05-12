@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matai Demo</title>
+  <script src="../dist/matai.min.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
+    .demo-section { margin-bottom: 3rem; }
+    h2 { margin-bottom: 0.5rem; }
+    .demo-input { margin-bottom: 0.5rem; }
+    .output { font-family: monospace; font-size: 0.85rem; color: #555; min-height: 1.2em; }
+    button.clear-btn { margin-top: 0.4rem; font-size: 0.8rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Matai מתי — Date Picker Demo</h1>
+
+  <div class="demo-section">
+    <h2>English — Single Date</h2>
+    <div class="demo-input"><input id="en-single" /></div>
+    <div class="output" id="out-en-single"></div>
+    <button class="clear-btn" id="clear-en-single">Clear</button>
+  </div>
+
+  <div class="demo-section">
+    <h2>English — Date Range</h2>
+    <div class="demo-input"><input id="en-range" /></div>
+    <div class="output" id="out-en-range"></div>
+    <button class="clear-btn" id="clear-en-range">Clear</button>
+  </div>
+
+  <div class="demo-section">
+    <h2>Hebrew — Single Date עברית</h2>
+    <div class="demo-input"><input id="he-single" /></div>
+    <div class="output" id="out-he-single"></div>
+    <button class="clear-btn" id="clear-he-single">Clear</button>
+  </div>
+
+  <div class="demo-section">
+    <h2>Hebrew — Date Range עברית טווח</h2>
+    <div class="demo-input"><input id="he-range" /></div>
+    <div class="output" id="out-he-range"></div>
+    <button class="clear-btn" id="clear-he-range">Clear</button>
+  </div>
+
+  <div class="demo-section">
+    <h2>Dual Language (EN + HE)</h2>
+    <div class="demo-input"><input id="dual" /></div>
+    <div class="output" id="out-dual"></div>
+    <button class="clear-btn" id="clear-dual">Clear</button>
+  </div>
+
+  <script>
+    function show(id, dp) {
+      const out = document.getElementById('out-' + id);
+      function update(v) {
+        if (!v) { out.textContent = 'null'; return; }
+        if (Array.isArray(v)) {
+          out.textContent = v.map(d => d.toDateString()).join(' → ');
+        } else {
+          out.textContent = v.toDateString();
+        }
+      }
+      document.getElementById('clear-' + id).addEventListener('click', () => {
+        dp.clear(); update(null);
+      });
+      return update;
+    }
+
+    const p1 = new Matai('#en-single', { lang: 'en', mode: 'single', onChange: show('en-single', null) });
+    show('en-single', p1);
+
+    const p2 = new Matai('#en-range', { lang: 'en', mode: 'range', onChange: v => show('en-range', p2)(v) });
+    show('en-range', p2);
+
+    const p3 = new Matai('#he-single', { lang: 'he', mode: 'single', onChange: v => show('he-single', p3)(v) });
+    show('he-single', p3);
+
+    const p4 = new Matai('#he-range', { lang: 'he', mode: 'range', onChange: v => show('he-range', p4)(v) });
+    show('he-range', p4);
+
+    const p5 = new Matai('#dual', { lang: ['en', 'he'], mode: 'single', onChange: v => show('dual', p5)(v) });
+    show('dual', p5);
+
+    // Wire up clear buttons properly
+    document.getElementById('clear-en-single').onclick = () => { p1.clear(); document.getElementById('out-en-single').textContent = 'null'; };
+    document.getElementById('clear-en-range').onclick  = () => { p2.clear(); document.getElementById('out-en-range').textContent = 'null'; };
+    document.getElementById('clear-he-single').onclick = () => { p3.clear(); document.getElementById('out-he-single').textContent = 'null'; };
+    document.getElementById('clear-he-range').onclick  = () => { p4.clear(); document.getElementById('out-he-range').textContent = 'null'; };
+    document.getElementById('clear-dual').onclick      = () => { p5.clear(); document.getElementById('out-dual').textContent = 'null'; };
+  </script>
+</body>
+</html>

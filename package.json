@@ -1,0 +1,8 @@
+{
+  "name": "matai",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "bun run build.ts"
+  },
+  "devDependencies": {}
+}
