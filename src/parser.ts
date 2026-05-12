@@ -28,26 +28,37 @@ function startOfDay(d: Date): Date {
   return r;
 }
 
+function expandYear(y: number): number {
+  if (y >= 100) return y;
+  return y < 50 ? 2000 + y : 1900 + y;
+}
+
 function tryParseNumeric(s: string, order: "dmy" | "mdy"): Date | null {
   // YYYY-MM-DD (ISO)
-  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  let m = s.match(/^(\d{2,4})-(\d{1,2})-(\d{1,2})$/);
   if (m) {
-    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    const yr = expandYear(+m[1]);
+    const d = new Date(yr, +m[2] - 1, +m[3]);
     return isValid(d, +m[2] - 1, +m[3]) ? startOfDay(d) : null;
   }
   // DD.MM.YYYY
-  m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
   if (m) {
-    const d = new Date(+m[3], +m[2] - 1, +m[1]);
+    const yr = expandYear(+m[3]);
+    const d = new Date(yr, +m[2] - 1, +m[1]);
     return isValid(d, +m[2] - 1, +m[1]) ? startOfDay(d) : null;
   }
-  // DD/MM/YYYY or MM/DD/YYYY depending on locale
-  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  // DD/MM/YYYY or MM/DD/YYYY depending on locale; if preferred order fails, try the other
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (m) {
-    const [a, b, yr] = [+m[1], +m[2], +m[3]];
-    const [mo, dy] = order === "dmy" ? [b - 1, a] : [a - 1, b];
-    const d = new Date(yr, mo, dy);
-    return isValid(d, mo, dy) ? startOfDay(d) : null;
+    const [a, b, yr] = [+m[1], +m[2], expandYear(+m[3])];
+    for (const [mo, dy] of order === "dmy"
+      ? [[b - 1, a], [a - 1, b]]
+      : [[a - 1, b], [b - 1, a]]) {
+      const d = new Date(yr, mo, dy);
+      if (isValid(d, mo, dy)) return startOfDay(d);
+    }
+    return null;
   }
   return null;
 }
@@ -143,20 +154,20 @@ function parseSingle(input: string, locale: Locale): Date | null {
     }
     // "[Month] [D][, YYYY]" or "[D] [Month] [YYYY]"
     // "January 15" / "Jan 15" / "January 15, 2024" / "15 January" / "15 January 2024"
-    m = lower.match(/^([a-z]+)\s+(\d{1,2})(?:[,\s]+(\d{4}))?$/);
+    m = lower.match(/^([a-z]+)\s+(\d{1,2})(?:[,\s]+(\d{2,4}))?$/);
     if (m) {
       const mo = matchMonthName(m[1], locale);
       if (mo >= 0) {
-        const yr = m[3] ? +m[3] : new Date().getFullYear();
+        const yr = m[3] ? expandYear(+m[3]) : new Date().getFullYear();
         const d = new Date(yr, mo, +m[2]);
         if (isValid(d, mo, +m[2])) return startOfDay(d);
       }
     }
-    m = lower.match(/^(\d{1,2})\s+([a-z]+)(?:\s+(\d{4}))?$/);
+    m = lower.match(/^(\d{1,2})\s+([a-z]+)(?:\s+(\d{2,4}))?$/);
     if (m) {
       const mo = matchMonthName(m[2], locale);
       if (mo >= 0) {
-        const yr = m[3] ? +m[3] : new Date().getFullYear();
+        const yr = m[3] ? expandYear(+m[3]) : new Date().getFullYear();
         const d = new Date(yr, mo, +m[1]);
         if (isValid(d, mo, +m[1])) return startOfDay(d);
       }
@@ -192,22 +203,22 @@ function parseSingle(input: string, locale: Locale): Date | null {
       const dayIdx = matchDayName(m[1].trim(), locale);
       if (dayIdx >= 0) return nextWeekday(dayIdx, "last");
     }
-    // "15 בינואר [2024]" or "ה-15 בינואר [2024]" or "ה-15 ב[Month]"
-    m = s.match(/^(?:ה-)?(\d{1,2})\s+ב(.+?)(?:\s+(\d{4}))?$/);
+    // "15 בינואר [2024]" or "ה-15 בינואר [2024]" or "15 ינואר [2024]" (ב optional)
+    m = s.match(/^(?:ה-)?(\d{1,2})\s+ב?(.+?)(?:\s+(\d{2,4}))?$/);
     if (m) {
       const mo = matchMonthName(m[2].trim(), locale);
       if (mo >= 0) {
-        const yr = m[3] ? +m[3] : new Date().getFullYear();
+        const yr = m[3] ? expandYear(+m[3]) : new Date().getFullYear();
         const d = new Date(yr, mo, +m[1]);
         if (isValid(d, mo, +m[1])) return startOfDay(d);
       }
     }
     // "[Month] 15 [2024]"
-    m = s.match(/^(.+?)\s+(\d{1,2})(?:\s+(\d{4}))?$/);
+    m = s.match(/^(.+?)\s+(\d{1,2})(?:\s+(\d{2,4}))?$/);
     if (m) {
       const mo = matchMonthName(m[1].trim(), locale);
       if (mo >= 0) {
-        const yr = m[3] ? +m[3] : new Date().getFullYear();
+        const yr = m[3] ? expandYear(+m[3]) : new Date().getFullYear();
         const d = new Date(yr, mo, +m[2]);
         if (isValid(d, mo, +m[2])) return startOfDay(d);
       }

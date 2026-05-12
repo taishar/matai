@@ -301,6 +301,35 @@ export class Matai {
     if (this.open) return;
     this.open = true;
     this.popup.style.display = "block";
+    this.clampPopup();
+  }
+
+  private clampPopup(): void {
+    this.popup.style.top = "";
+    this.popup.style.bottom = "";
+    this.popup.style.left = "";
+    this.popup.style.right = "";
+
+    const rect = this.popup.getBoundingClientRect();
+    const wrapperRect = this.wrapper.getBoundingClientRect();
+    const margin = 8;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (rect.bottom > vh - margin) {
+      this.popup.style.top = "auto";
+      this.popup.style.bottom = "calc(100% + 6px)";
+    }
+
+    let desiredLeft = rect.left;
+    if (rect.right > vw - margin) desiredLeft = vw - margin - (rect.right - rect.left);
+    if (desiredLeft < margin) desiredLeft = margin;
+    const newLeft = desiredLeft - wrapperRect.left;
+    const currentLeft = rect.left - wrapperRect.left;
+    if (Math.round(newLeft) !== Math.round(currentLeft)) {
+      this.popup.style.left = newLeft + "px";
+      this.popup.style.right = "auto";
+    }
   }
 
   private hidePopup(): void {

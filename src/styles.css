@@ -3,7 +3,7 @@
 .matai-input { padding: 8px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 8px; width: 220px; box-sizing: border-box; outline: none; transition: border-color 0.15s; }
 .matai-input:focus { border-color: var(--matai-color, #1a73e8); }
 
-.matai-popup { position: absolute; top: calc(100% + 6px); left: 0; z-index: 1000; background: #fff; border-radius: 16px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 28px rgba(0,0,0,.14); min-width: 240px; }
+.matai-popup { position: absolute; top: calc(100% + 6px); left: 0; z-index: 1000; background: #fff; border-radius: 16px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 28px rgba(0,0,0,.14); min-width: 240px; max-width: calc(100vw - 16px); }
 [dir="rtl"] .matai-popup { left: auto; right: 0; }
 
 .matai-lang-toggle { display: flex; gap: 4px; margin-bottom: 8px; }
@@ -101,6 +101,10 @@
 .matai-popup-range { min-width: auto; }
 .matai-cals { display: flex; gap: 20px; }
 .matai-cals .matai-cal { min-width: 252px; }
+
+@media (max-width: 540px) {
+  .matai-cals { flex-direction: column; }
+}
 
 .matai-range-badge { text-align: center; margin-top: 10px; }
 .matai-range-badge span {
