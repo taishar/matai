@@ -1,0 +1,142 @@
+<h2>When should the badge appear?</h2>
+<p class="subtitle">The badge shows "X days" — but at which moment(s)?</p>
+
+<style>
+  .cal-mock { font-family: system-ui, sans-serif; font-size: 13px; border: 1px solid #ccc; border-radius: 6px; padding: 8px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+  .cal-nav { background: none; border: none; font-size: 18px; cursor: default; padding: 2px 6px; color: #333; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-wdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 2px; }
+  .cal-wday { text-align: center; font-size: 11px; color: #888; padding: 2px 0; }
+  .day { border: none; border-radius: 3px; padding: 5px 2px; font-size: 13px; text-align: center; width: 100%; background: none; color: #333; }
+  .day.start, .day.end { background: #1a73e8; color: #fff; border-radius: 3px; }
+  .day.in-range { background: #d2e3fc; border-radius: 0; }
+  .day.hover-end { background: #1a73e8; color: #fff; border-radius: 3px; opacity: 0.7; }
+  .day.other { color: #ccc; }
+  .popup-frame { background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.15); display: inline-block; min-width: 220px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; background: #f0f4ff; border: 1px solid #c7d7fc; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #2c5fd4; font-weight: 600; margin-top: 8px; }
+  .badge-ghost { display: inline-flex; align-items: center; gap: 6px; background: #f5f5f5; border: 1px dashed #ccc; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #aaa; font-weight: 600; margin-top: 8px; }
+  .state-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-bottom: 6px; }
+  .state-pair { display: flex; gap: 16px; align-items: flex-start; margin-top: 4px; }
+  .state-box { text-align: center; }
+  .arrow { font-size: 20px; color: #ccc; align-self: center; padding-top: 10px; }
+</style>
+
+<div class="options">
+
+  <div class="option" data-choice="hover-only" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>During hover only</h3>
+      <p>Badge appears live as you move your cursor to pick the end date. Disappears once the range is confirmed — the input field already shows the dates.</p>
+      <div class="state-pair" style="margin-top:10px">
+        <div class="state-box">
+          <div class="state-label">Hovering</div>
+          <div class="popup-frame">
+            <div class="cal-mock">
+              <div class="cal-header"><span class="cal-nav">‹</span><span>May 2026</span><span class="cal-nav">›</span></div>
+              <div class="cal-wdays"><div class="cal-wday">Su</div><div class="cal-wday">Mo</div><div class="cal-wday">Tu</div><div class="cal-wday">We</div><div class="cal-wday">Th</div><div class="cal-wday">Fr</div><div class="cal-wday">Sa</div></div>
+              <div class="cal-grid">
+                <div class="day other">27</div><div class="day other">28</div><div class="day other">29</div><div class="day other">30</div><div class="day">1</div><div class="day">2</div><div class="day">3</div>
+                <div class="day">4</div><div class="day">5</div><div class="day">6</div><div class="day">7</div><div class="day">8</div><div class="day">9</div><div class="day">10</div>
+                <div class="day start">11</div><div class="day in-range">12</div><div class="day in-range">13</div><div class="day in-range">14</div><div class="day in-range">15</div><div class="day in-range">16</div><div class="day in-range">17</div>
+                <div class="day in-range">18</div><div class="day in-range">19</div><div class="day hover-end">20</div><div class="day">21</div><div class="day">22</div><div class="day">23</div><div class="day">24</div>
+                <div class="day">25</div><div class="day">26</div><div class="day">27</div><div class="day">28</div><div class="day">29</div><div class="day">30</div><div class="day">31</div>
+              </div>
+            </div>
+            <div style="text-align:center"><span class="badge">📅 10 days</span></div>
+          </div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="state-box">
+          <div class="state-label">After click</div>
+          <div class="popup-frame" style="opacity:0.6">
+            <div style="font-size:12px;color:#555;padding:4px 0">Popup closes</div>
+            <input style="padding:6px 10px;font-size:13px;border:1px solid #ccc;border-radius:4px;width:200px" value="2026-05-11 - 2026-05-20" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="confirmed-only" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>After confirmation only</h3>
+      <p>No badge during hover — once both dates are picked, the badge appears persistently below the calendars when you reopen the popup.</p>
+      <div class="state-pair" style="margin-top:10px">
+        <div class="state-box">
+          <div class="state-label">Hovering</div>
+          <div class="popup-frame">
+            <div class="cal-mock">
+              <div class="cal-header"><span class="cal-nav">‹</span><span>May 2026</span><span class="cal-nav">›</span></div>
+              <div class="cal-wdays"><div class="cal-wday">Su</div><div class="cal-wday">Mo</div><div class="cal-wday">Tu</div><div class="cal-wday">We</div><div class="cal-wday">Th</div><div class="cal-wday">Fr</div><div class="cal-wday">Sa</div></div>
+              <div class="cal-grid">
+                <div class="day other">27</div><div class="day other">28</div><div class="day other">29</div><div class="day other">30</div><div class="day">1</div><div class="day">2</div><div class="day">3</div>
+                <div class="day">4</div><div class="day">5</div><div class="day">6</div><div class="day">7</div><div class="day">8</div><div class="day">9</div><div class="day">10</div>
+                <div class="day start">11</div><div class="day in-range">12</div><div class="day in-range">13</div><div class="day in-range">14</div><div class="day in-range">15</div><div class="day in-range">16</div><div class="day in-range">17</div>
+                <div class="day in-range">18</div><div class="day in-range">19</div><div class="day hover-end">20</div><div class="day">21</div><div class="day">22</div><div class="day">23</div><div class="day">24</div>
+                <div class="day">25</div><div class="day">26</div><div class="day">27</div><div class="day">28</div><div class="day">29</div><div class="day">30</div><div class="day">31</div>
+              </div>
+            </div>
+            <div style="text-align:center"><span class="badge-ghost">no badge yet</span></div>
+          </div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="state-box">
+          <div class="state-label">Reopened after pick</div>
+          <div class="popup-frame">
+            <div class="cal-mock">
+              <div class="cal-header"><span class="cal-nav">‹</span><span>May 2026</span><span class="cal-nav">›</span></div>
+              <div class="cal-wdays"><div class="cal-wday">Su</div><div class="cal-wday">Mo</div><div class="cal-wday">Tu</div><div class="cal-wday">We</div><div class="cal-wday">Th</div><div class="cal-wday">Fr</div><div class="cal-wday">Sa</div></div>
+              <div class="cal-grid">
+                <div class="day other">27</div><div class="day other">28</div><div class="day other">29</div><div class="day other">30</div><div class="day">1</div><div class="day">2</div><div class="day">3</div>
+                <div class="day">4</div><div class="day">5</div><div class="day">6</div><div class="day">7</div><div class="day">8</div><div class="day">9</div><div class="day">10</div>
+                <div class="day start">11</div><div class="day in-range">12</div><div class="day in-range">13</div><div class="day in-range">14</div><div class="day in-range">15</div><div class="day in-range">16</div><div class="day in-range">17</div>
+                <div class="day in-range">18</div><div class="day in-range">19</div><div class="day end">20</div><div class="day">21</div><div class="day">22</div><div class="day">23</div><div class="day">24</div>
+                <div class="day">25</div><div class="day">26</div><div class="day">27</div><div class="day">28</div><div class="day">29</div><div class="day">30</div><div class="day">31</div>
+              </div>
+            </div>
+            <div style="text-align:center"><span class="badge">📅 10 days</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="both" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Both — live during hover, stays after</h3>
+      <p>Badge updates live as you hover (showing the would-be size), then stays visible once the range is confirmed. Most informative.</p>
+      <div class="state-pair" style="margin-top:10px">
+        <div class="state-box">
+          <div class="state-label">Hovering</div>
+          <div class="popup-frame">
+            <div class="cal-mock">
+              <div class="cal-header"><span class="cal-nav">‹</span><span>May 2026</span><span class="cal-nav">›</span></div>
+              <div class="cal-wdays"><div class="cal-wday">Su</div><div class="cal-wday">Mo</div><div class="cal-wday">Tu</div><div class="cal-wday">We</div><div class="cal-wday">Th</div><div class="cal-wday">Fr</div><div class="cal-wday">Sa</div></div>
+              <div class="cal-grid">
+                <div class="day other">27</div><div class="day other">28</div><div class="day other">29</div><div class="day other">30</div><div class="day">1</div><div class="day">2</div><div class="day">3</div>
+                <div class="day">4</div><div class="day">5</div><div class="day">6</div><div class="day">7</div><div class="day">8</div><div class="day">9</div><div class="day">10</div>
+                <div class="day start">11</div><div class="day in-range">12</div><div class="day in-range">13</div><div class="day in-range">14</div><div class="day in-range">15</div><div class="day in-range">16</div><div class="day in-range">17</div>
+                <div class="day in-range">18</div><div class="day in-range">19</div><div class="day hover-end">20</div><div class="day">21</div><div class="day">22</div><div class="day">23</div><div class="day">24</div>
+                <div class="day">25</div><div class="day">26</div><div class="day">27</div><div class="day">28</div><div class="day">29</div><div class="day">30</div><div class="day">31</div>
+              </div>
+            </div>
+            <div style="text-align:center"><span class="badge">📅 10 days</span></div>
+          </div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="state-box">
+          <div class="state-label">After click</div>
+          <div class="popup-frame" style="opacity:0.6">
+            <div style="font-size:12px;color:#555;padding:4px 0">Popup closes</div>
+            <div style="text-align:center;margin-top:6px"><span class="badge" style="opacity:0.5">still there if reopened</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -30,3 +30,6 @@
 .matai-popup-range { min-width: auto; }
 .matai-cals { display: flex; gap: 16px; }
 .matai-cals .matai-cal { flex: 1; min-width: 200px; }
+
+.matai-range-badge { text-align: center; margin-top: 8px; }
+.matai-range-badge span { display: inline-flex; align-items: center; background: #f0f4ff; border: 1px solid #c7d7fc; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #2c5fd4; font-weight: 600; }

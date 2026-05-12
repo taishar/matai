@@ -23,6 +23,22 @@ function resolveElement(el: HTMLElement | string): HTMLElement {
   return el;
 }
 
+function daysBetween(a: Date, b: Date): number {
+  return Math.round(Math.abs(b.getTime() - a.getTime()) / 86_400_000);
+}
+
+function formatRangeDays(days: number): string {
+  if (days < 14) return `${days} day${days === 1 ? "" : "s"}`;
+  if (days < 90) {
+    const weeks = Math.floor(days / 7);
+    const rem = days % 7;
+    return rem === 0 ? `${weeks} weeks` : `${weeks} weeks, ${rem} days`;
+  }
+  const months = Math.floor(days / 30);
+  const rem = days % 30;
+  return rem === 0 ? `${months} months` : `${months} months, ${rem} days`;
+}
+
 function nextMonth(year: number, month: number): [number, number] {
   return month === 11 ? [year + 1, 0] : [year, month + 1];
 }
@@ -51,6 +67,7 @@ export class Matai {
   private popup: HTMLElement;
   private calStart: Calendar;
   private calEnd: Calendar | null = null;
+  private badgeEl: HTMLElement | null = null;
   private open = false;
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private outsideHandler: (e: MouseEvent) => void;
@@ -99,6 +116,12 @@ export class Matai {
       calWrapper.appendChild(this.calStart.getElement());
       calWrapper.appendChild(this.calEnd.getElement());
       this.popup.appendChild(calWrapper);
+
+      this.badgeEl = document.createElement("div");
+      this.badgeEl.className = "matai-range-badge";
+      this.badgeEl.style.display = "none";
+      this.badgeEl.appendChild(document.createElement("span"));
+      this.popup.appendChild(this.badgeEl);
     } else {
       this.popup.appendChild(this.calStart.getElement());
       this.wireHover(this.calStart);
@@ -121,17 +144,28 @@ export class Matai {
     return LOCALES[this.activeLang];
   }
 
+  private updateBadge(start: Date | null, end: Date | null): void {
+    if (!this.badgeEl) return;
+    if (!start || !end) { this.badgeEl.style.display = "none"; return; }
+    const days = daysBetween(start, end);
+    this.badgeEl.querySelector("span")!.textContent = formatRangeDays(days);
+    this.badgeEl.style.display = "block";
+  }
+
   private wireHover(cal: Calendar): void {
     cal.getElement().addEventListener("matai-hover", (e: Event) => {
       const d = (e as CustomEvent<Date>).detail;
       if (this.mode === "range" && this.rangeStep === 1) {
         this.calStart.setHoverEnd(d);
         this.calEnd?.setHoverEnd(d);
+        this.updateBadge(this.rangeStart, d);
       }
     });
     cal.getElement().addEventListener("mouseleave", () => {
       this.calStart.setHoverEnd(null);
       this.calEnd?.setHoverEnd(null);
+      const confirmed = Array.isArray(this.value) ? this.value : null;
+      this.updateBadge(confirmed?.[0] ?? null, confirmed?.[1] ?? null);
     });
   }
 
@@ -192,6 +226,7 @@ export class Matai {
         this.rangeStep = 0;
         this.rangeStart = null;
         this.setCalendarsSelected(parsed);
+        if (Array.isArray(parsed)) this.updateBadge(parsed[0], parsed[1]);
       }
     }, 300);
   }
@@ -217,6 +252,7 @@ export class Matai {
         this.setCalendarsSelectedNoJump([lo, hi]);
         this.calStart.setHoverEnd(null);
         this.calEnd?.setHoverEnd(null);
+        this.updateBadge(lo, hi);
         this.rangeStep = 0;
         this.rangeStart = null;
         this.onChange?.(this.value);
@@ -280,6 +316,7 @@ export class Matai {
     this.value = null;
     this.input.value = "";
     this.setCalendarsSelected(null);
+    this.updateBadge(null, null);
     this.rangeStep = 0;
     this.rangeStart = null;
   }
