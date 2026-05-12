@@ -41,4 +41,5 @@ export interface MataiOptions {
   format?: string;
   onChange?: (value: DateValue) => void;
   placeholder?: string;
+  color?: string;
 }

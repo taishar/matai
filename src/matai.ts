@@ -27,16 +27,18 @@ function daysBetween(a: Date, b: Date): number {
   return Math.round(Math.abs(b.getTime() - a.getTime()) / 86_400_000);
 }
 
-function formatRangeDays(days: number): string {
-  if (days < 14) return `${days} day${days === 1 ? "" : "s"}`;
+function formatRangeDays(days: number, locale: Locale): string {
+  const u = locale.tokens.units;
+  const label = (n: number, pair: string[]) => `${n} ${pair[n === 1 ? 0 : 1]}`;
+  if (days < 14) return label(days, u.day);
   if (days < 90) {
     const weeks = Math.floor(days / 7);
     const rem = days % 7;
-    return rem === 0 ? `${weeks} weeks` : `${weeks} weeks, ${rem} days`;
+    return rem === 0 ? label(weeks, u.week) : `${label(weeks, u.week)}, ${label(rem, u.day)}`;
   }
   const months = Math.floor(days / 30);
   const rem = days % 30;
-  return rem === 0 ? `${months} months` : `${months} months, ${rem} days`;
+  return rem === 0 ? label(months, u.month) : `${label(months, u.month)}, ${label(rem, u.day)}`;
 }
 
 function nextMonth(year: number, month: number): [number, number] {
@@ -84,13 +86,17 @@ export class Matai {
 
     this.wrapper = document.createElement("div");
     this.wrapper.className = "matai-wrapper";
+    if (options.color) this.wrapper.style.setProperty("--matai-color", options.color);
 
     this.input = document.createElement("input");
     this.input.type = "text";
     this.input.className = "matai-input";
     this.input.placeholder = options.placeholder ??
       (this.mode === "range" ? this.activeLocale().placeholderRange : this.activeLocale().placeholder);
-    if (this.activeLocale().rtl) this.input.setAttribute("dir", "rtl");
+    if (this.activeLocale().rtl) {
+      this.wrapper.setAttribute("dir", "rtl");
+      this.input.setAttribute("dir", "rtl");
+    }
 
     this.popup = document.createElement("div");
     this.popup.className = "matai-popup" + (this.mode === "range" ? " matai-popup-range" : "");
@@ -148,7 +154,7 @@ export class Matai {
     if (!this.badgeEl) return;
     if (!start || !end) { this.badgeEl.style.display = "none"; return; }
     const days = daysBetween(start, end);
-    this.badgeEl.querySelector("span")!.textContent = formatRangeDays(days);
+    this.badgeEl.querySelector("span")!.textContent = formatRangeDays(days, this.activeLocale());
     this.badgeEl.style.display = "block";
   }
 
@@ -210,11 +216,18 @@ export class Matai {
     const locale = this.activeLocale();
     this.calStart.setLocale(locale);
     this.calEnd?.setLocale(locale);
-    if (locale.rtl) this.input.setAttribute("dir", "rtl");
-    else this.input.removeAttribute("dir");
+    if (locale.rtl) {
+      this.wrapper.setAttribute("dir", "rtl");
+      this.input.setAttribute("dir", "rtl");
+    } else {
+      this.wrapper.removeAttribute("dir");
+      this.input.removeAttribute("dir");
+    }
     this.popup.querySelectorAll<HTMLElement>(".matai-lang-btn").forEach(btn => {
       btn.classList.toggle("matai-lang-active", btn.dataset.lang === lang);
     });
+    const confirmed = Array.isArray(this.value) ? this.value : null;
+    this.updateBadge(confirmed?.[0] ?? null, confirmed?.[1] ?? null);
   }
 
   private handleInput(): void {

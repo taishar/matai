@@ -179,7 +179,9 @@ export class Calendar {
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "matai-day";
-    cell.textContent = String(d.getDate());
+    const label = document.createElement("span");
+    label.textContent = String(d.getDate());
+    cell.appendChild(label);
     cell.dataset.date = toLocalISO(d);
     if (otherMonth) cell.dataset.otherMonth = "1";
 
@@ -212,6 +214,9 @@ export class Calendar {
       if (start && end && isBetween(d, start, end)) cell.dataset.inRange = "1";
 
       if (start && !end && this.hoverEnd) {
+        delete cell.dataset.rangeStart;
+        delete cell.dataset.rangeEnd;
+        delete cell.dataset.inRange;
         const [lo, hi] = start <= this.hoverEnd ? [start, this.hoverEnd] : [this.hoverEnd, start];
         if (sameDay(d, lo)) cell.dataset.rangeStart = "1";
         if (sameDay(d, hi)) cell.dataset.rangeEnd = "1";

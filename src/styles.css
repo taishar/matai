@@ -1,35 +1,116 @@
 .matai-wrapper { position: relative; display: inline-block; }
 
-.matai-input { padding: 6px 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; width: 220px; box-sizing: border-box; }
+.matai-input { padding: 8px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 8px; width: 220px; box-sizing: border-box; outline: none; transition: border-color 0.15s; }
+.matai-input:focus { border-color: var(--matai-color, #1a73e8); }
 
-.matai-popup { position: absolute; top: calc(100% + 4px); left: 0; z-index: 1000; background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.15); min-width: 240px; }
+.matai-popup { position: absolute; top: calc(100% + 6px); left: 0; z-index: 1000; background: #fff; border-radius: 16px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 28px rgba(0,0,0,.14); min-width: 240px; }
 [dir="rtl"] .matai-popup { left: auto; right: 0; }
 
-.matai-lang-toggle { display: flex; gap: 4px; margin-bottom: 6px; }
-.matai-lang-btn { flex: 1; padding: 3px 0; font-size: 12px; border: 1px solid #ccc; border-radius: 3px; background: #f5f5f5; cursor: pointer; }
-.matai-lang-active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+.matai-lang-toggle { display: flex; gap: 4px; margin-bottom: 8px; }
+.matai-lang-btn { flex: 1; padding: 4px 0; font-size: 12px; border: 1px solid #e0e0e0; border-radius: 6px; background: #f5f5f5; cursor: pointer; color: #555; transition: background 0.1s, color 0.1s; }
+.matai-lang-active { background: var(--matai-color, #1a73e8); color: #fff; border-color: var(--matai-color, #1a73e8); }
 
-.matai-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.matai-title { font-weight: 600; font-size: 14px; }
-.matai-nav { background: none; border: none; font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 3px; line-height: 1; }
+.matai-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; direction: ltr; }
+.matai-title { font-weight: 600; font-size: 14px; color: #111; }
+.matai-nav { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 50%; line-height: 1; color: #555; transition: background 0.1s; }
 .matai-nav:hover { background: #f0f0f0; }
 
-.matai-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 2px; }
-.matai-wday { text-align: center; font-size: 11px; color: #888; padding: 2px 0; }
+.matai-weekdays { display: grid; grid-template-columns: repeat(7, 36px); margin-bottom: 2px; }
+.matai-wday { text-align: center; font-size: 11px; color: #999; padding: 2px 0; font-weight: 500; }
 
-.matai-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.matai-grid { display: grid; grid-template-columns: repeat(7, 36px); gap: 0; }
 
-.matai-day { background: none; border: none; border-radius: 3px; padding: 5px 2px; font-size: 13px; text-align: center; cursor: pointer; width: 100%; }
-.matai-day:hover { background: #f0f0f0; }
-.matai-day[data-other-month] { color: #ccc; }
-.matai-day[data-today] { font-weight: 700; border: 1px solid #1a73e8; }
-.matai-day[data-selected] { background: #1a73e8; color: #fff; }
-.matai-day[data-range-start], .matai-day[data-range-end] { background: #1a73e8; color: #fff; border-radius: 3px; }
-.matai-day[data-in-range] { background: #d2e3fc; border-radius: 0; }
+/* Each day cell: no background/border of its own — handled by ::before (strip) and ::after (circle) */
+.matai-day {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 36px;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Day number sits on top of everything */
+.matai-day span {
+  position: relative;
+  z-index: 2;
+  display: block;
+  line-height: 36px;
+  text-align: center;
+  font-size: 13px;
+  color: #222;
+  pointer-events: none;
+}
+
+/* Strip layer — same vertical bounds as the circle (top: 2px, height: 32px) */
+.matai-day::before {
+  content: '';
+  position: absolute;
+  top: 2px; bottom: 2px;
+  left: 0; right: 0;
+  background: transparent;
+  z-index: 0;
+}
+
+/* Circle layer — fixed square so it's always a true circle */
+.matai-day::after {
+  content: '';
+  position: absolute;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: transparent;
+  z-index: 1;
+}
+
+.matai-day:not([data-selected]):not([data-range-start]):not([data-range-end]):hover::after { background: #f0f0f0; }
+
+.matai-day[data-other-month] span { color: #ccc; }
+
+.matai-day[data-today]::after { border: 2px solid var(--matai-color, #1a73e8); }
+
+.matai-day[data-selected]::after,
+.matai-day[data-range-start]::after,
+.matai-day[data-range-end]::after { background: var(--matai-color, #1a73e8); }
+
+.matai-day[data-selected] span,
+.matai-day[data-range-start] span,
+.matai-day[data-range-end] span { color: #fff; }
+
+/* Strip: only the half extending toward the range interior */
+.matai-day[data-range-start]::before {
+  background: color-mix(in srgb, var(--matai-color, #1a73e8) 15%, white);
+  left: 50%;
+}
+.matai-day[data-range-end]::before {
+  background: color-mix(in srgb, var(--matai-color, #1a73e8) 15%, white);
+  right: 50%;
+}
+.matai-day[data-in-range]::before { background: color-mix(in srgb, var(--matai-color, #1a73e8) 15%, white); }
+
+/* RTL: physical left/right of the strip must be flipped */
+[dir="rtl"] .matai-day[data-range-start]::before { left: 0; right: 50%; }
+[dir="rtl"] .matai-day[data-range-end]::before { right: 0; left: 50%; }
 
 .matai-popup-range { min-width: auto; }
-.matai-cals { display: flex; gap: 16px; }
-.matai-cals .matai-cal { flex: 1; min-width: 200px; }
+.matai-cals { display: flex; gap: 20px; }
+.matai-cals .matai-cal { min-width: 252px; }
 
-.matai-range-badge { text-align: center; margin-top: 8px; }
-.matai-range-badge span { display: inline-flex; align-items: center; background: #f0f4ff; border: 1px solid #c7d7fc; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #2c5fd4; font-weight: 600; }
+.matai-range-badge { text-align: center; margin-top: 10px; }
+.matai-range-badge span {
+  display: inline-flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--matai-color, #1a73e8) 10%, white);
+  border: 1px solid color-mix(in srgb, var(--matai-color, #1a73e8) 25%, white);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px;
+  color: var(--matai-color, #1a73e8);
+  font-weight: 600;
+}
