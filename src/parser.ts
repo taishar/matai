@@ -298,7 +298,7 @@ function parseNamedRange(input: string, locale: Locale): [Date, Date] | null {
   if (m && +m[1] >= 1900 && +m[1] <= 2100) return yearRange(new Date(+m[1], 0, 1));
 
   // 6. Universal: month name [year] → full month (EN: optional year; HE: year required)
-  let mname = lower.match(/^([a-z]+)(?:\s+(\d{2,4}))?$/);
+  let mname = lower.match(/^([\p{L}]+)(?:\s+(\d{2,4}))?$/u);
   if (!mname) {
     const genM = s.match(/^(.+?)\s+(\d{2,4})$/);
     if (genM) mname = genM;

@@ -60,5 +60,5 @@ export const he: Locale = {
     ],
   },
   weekendStart: 5,
-  requireYearForMonthRange: true,
+  requireYearForMonthRange: false,
 };

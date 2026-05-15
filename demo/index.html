@@ -1,58 +1,94 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Matai Demo</title>
-  <script src="../dist/matai.min.js"></script>
-  <style>
-    body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
-    .demo-section { margin-bottom: 3rem; }
-    h2 { margin-bottom: 0.5rem; }
-    .demo-input { margin-bottom: 0.5rem; }
-    .output { font-family: monospace; font-size: 0.85rem; color: #555; min-height: 1.2em; }
-    button.clear-btn { margin-top: 0.4rem; font-size: 0.8rem; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h1>Matai מתי — Date Picker Demo</h1>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Matai Demo</title>
+        <script src="../dist/matai.min.js"></script>
+        <style>
+            body {
+                font-family: system-ui, sans-serif;
+                padding: 2rem;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            .demo-section {
+                margin-bottom: 3rem;
+            }
+            h2 {
+                margin-bottom: 0.5rem;
+            }
+            .demo-input {
+                margin-bottom: 0.5rem;
+            }
+            .output {
+                font-family: monospace;
+                font-size: 0.85rem;
+                color: #555;
+                min-height: 1.2em;
+            }
+            button.clear-btn {
+                margin-top: 0.4rem;
+                font-size: 0.8rem;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Matai מתי — Date Picker Demo</h1>
 
-  <div class="demo-section">
-    <h2>Single Date</h2>
-    <div class="demo-input"><input id="single" /></div>
-    <div class="output" id="out-single"></div>
-    <button class="clear-btn" id="clear-single">Clear</button>
-  </div>
+        <div class="demo-section">
+            <h2>Single Date</h2>
+            <div class="demo-input"><input id="single" /></div>
+            <div class="output" id="out-single"></div>
+            <button class="clear-btn" id="clear-single">Clear</button>
+        </div>
 
-  <div class="demo-section">
-    <h2>Date Range</h2>
-    <div class="demo-input"><input id="range" /></div>
-    <div class="output" id="out-range"></div>
-    <button class="clear-btn" id="clear-range">Clear</button>
-  </div>
+        <div class="demo-section">
+            <h2>Date Range</h2>
+            <div class="demo-input"><input id="range" /></div>
+            <div class="output" id="out-range"></div>
+            <button class="clear-btn" id="clear-range">Clear</button>
+        </div>
 
-  <script>
-    function show(id, dp) {
-      const out = document.getElementById('out-' + id);
-      function update(v) {
-        if (!v) { out.textContent = 'null'; return; }
-        if (Array.isArray(v)) {
-          out.textContent = v.map(d => d.toDateString()).join(' → ');
-        } else {
-          out.textContent = v.toDateString();
-        }
-      }
-      document.getElementById('clear-' + id).addEventListener('click', () => {
-        dp.clear(); update(null);
-      });
-      return update;
-    }
+        <script>
+            function show(id, dp) {
+                const out = document.getElementById("out-" + id);
+                function update(v) {
+                    if (!v) {
+                        out.textContent = "null";
+                        return;
+                    }
+                    if (Array.isArray(v)) {
+                        out.textContent = v
+                            .map((d) => d.toDateString())
+                            .join(" → ");
+                    } else {
+                        out.textContent = v.toDateString();
+                    }
+                }
+                document
+                    .getElementById("clear-" + id)
+                    .addEventListener("click", () => {
+                        dp.clear();
+                        update(null);
+                    });
+                return update;
+            }
 
-    const p1 = new Matai('#single', { lang: ['en', 'he'], mode: 'single', onChange: v => show('single', p1)(v) });
-    show('single', p1);
+            const p1 = new Matai("#single", {
+                lang: ["en", "he"],
+                mode: "single",
+                onChange: (v) => show("single", p1)(v),
+            });
+            show("single", p1);
 
-    const p2 = new Matai('#range', { lang: ['en', 'he'], mode: 'range', onChange: v => show('range', p2)(v) });
-    show('range', p2);
-  </script>
-</body>
+            const p2 = new Matai("#range", {
+                lang: ["en", "he"],
+                mode: "range",
+                onChange: (v) => show("range", p2)(v),
+            });
+            show("range", p2);
+        </script>
+    </body>
 </html>

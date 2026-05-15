@@ -437,11 +437,12 @@ describe("range/HE - explicit range splits", () => {
     expectRange(parse("1 ינואר עד 31 ינואר", he, "range"), d(yr, 1, 1), d(yr, 1, 31)));
 });
 
-describe("range/HE - requireYearForMonthRange guard", () => {
-  test("ינואר alone → null in HE range mode (year required)", () =>
-    expect(parse("ינואר", he, "range")).toBeNull());
-  test("אוגוסט alone → null in HE range mode", () =>
-    expect(parse("אוגוסט", he, "range")).toBeNull());
+describe("range/HE - month name alone → full month", () => {
+  const yr = new Date().getFullYear();
+  test("ינואר alone → full January", () =>
+    expectRange(parse("ינואר", he, "range"), d(yr, 1, 1), d(yr, 1, 31)));
+  test("אוגוסט alone → full August", () =>
+    expectRange(parse("אוגוסט", he, "range"), d(yr, 8, 1), d(yr, 8, 31)));
 });
 
 describe("parseWithAutoDetect", () => {
