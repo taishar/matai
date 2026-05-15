@@ -110,7 +110,7 @@ export class Calendar {
     const prev = document.createElement("button");
     prev.type = "button";
     prev.className = "matai-nav matai-prev";
-    prev.textContent = "‹";
+    prev.innerHTML = `<svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     prev.addEventListener("click", () => this.navigate(-1));
 
     const title = document.createElement("span");
@@ -120,7 +120,7 @@ export class Calendar {
     const next = document.createElement("button");
     next.type = "button";
     next.className = "matai-nav matai-next";
-    next.textContent = "›";
+    next.innerHTML = `<svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     next.addEventListener("click", () => this.navigate(1));
 
     header.appendChild(prev);

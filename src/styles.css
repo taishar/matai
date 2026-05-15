@@ -15,7 +15,7 @@
 
 .matai-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; direction: ltr; }
 .matai-title { font-weight: 600; font-size: 14px; color: #111; }
-.matai-nav { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 50%; line-height: 1; color: #555; transition: background 0.1s; }
+.matai-nav { background: none; border: none; cursor: pointer; width: 28px; height: 28px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #555; transition: background 0.1s; }
 .matai-nav:hover { background: #f0f0f0; }
 
 .matai-weekdays { display: grid; grid-template-columns: repeat(7, 36px); margin-bottom: 2px; }
@@ -76,7 +76,7 @@
 
 .matai-day[data-other-month] span { color: #ccc; }
 
-.matai-day[data-today]::after { border: 2px solid var(--matai-color, #1a73e8); }
+.matai-day[data-today]::after { border: 1px solid color-mix(in srgb, var(--matai-color, #1a73e8) 40%, transparent); }
 
 .matai-day[data-selected]::after,
 .matai-day[data-range-start]::after,
