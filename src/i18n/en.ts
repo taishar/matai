@@ -10,6 +10,8 @@ export const en: Locale = {
   monthsShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
   placeholder: "Select a date…",
   placeholderRange: "Select a date range…",
+  examples: ["tomorrow", "in 3 days", "last monday", "Jan 15", "next friday"],
+  examplesRange: ["next week", "this month", "last 30 days", "Q1", "next month"],
   numericOrder: "mdy",
   tokens: {
     today: ["today", "now"],

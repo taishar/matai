@@ -45,6 +45,8 @@ export interface Locale {
   monthsShort: string[];
   placeholder: string;
   placeholderRange: string;
+  examples: string[];
+  examplesRange: string[];
   tokens: LocaleTokens;
   numericOrder: "dmy" | "mdy";
 }

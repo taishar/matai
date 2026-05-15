@@ -76,6 +76,11 @@ export class Matai {
   private searchInput!: HTMLInputElement;
   private outsideHandler: (e: MouseEvent) => void;
 
+  private hintEl: HTMLElement | null = null;
+  private hintExamples: string[] = [];
+  private hintIndex = 0;
+  private hintTimer: ReturnType<typeof setInterval> | null = null;
+
   constructor(el: HTMLElement | string, options: MataiOptions = {}) {
     const target = resolveElement(el);
 
@@ -118,10 +123,23 @@ export class Matai {
     this.searchInput = document.createElement("input");
     this.searchInput.type = "text";
     this.searchInput.className = "matai-search";
-    this.searchInput.placeholder = options.placeholder ??
-      (this.mode === "range" ? this.activeLocale().placeholderRange : this.activeLocale().placeholder);
+    if (options.placeholder) this.searchInput.placeholder = options.placeholder;
     if (this.activeLocale().rtl) this.searchInput.setAttribute("dir", "rtl");
-    this.popup.appendChild(this.searchInput);
+
+    const locale = this.activeLocale();
+    this.hintExamples = this.mode === "range" ? locale.examplesRange : locale.examples;
+
+    const searchWrapper = document.createElement("div");
+    searchWrapper.className = "matai-search-wrapper";
+    searchWrapper.appendChild(this.searchInput);
+
+    this.hintEl = document.createElement("div");
+    this.hintEl.className = "matai-hint";
+    this.hintEl.textContent = this.hintExamples[0];
+    if (locale.rtl) this.hintEl.setAttribute("dir", "rtl");
+    searchWrapper.appendChild(this.hintEl);
+
+    this.popup.appendChild(searchWrapper);
 
     const now = new Date();
     this.calStart = new Calendar(this.activeLocale(), this.mode, now.getFullYear(), now.getMonth());
@@ -160,7 +178,27 @@ export class Matai {
       if (this.open) this.hidePopup();
       else this.showPopup();
     });
-    this.searchInput.addEventListener("input", () => this.handleInput());
+    this.searchInput.addEventListener("input", () => {
+      if (this.hintEl) {
+        if (this.searchInput.value) {
+          this.hintEl.style.opacity = "0";
+          this.stopHintCycle();
+        } else {
+          this.hintEl.style.opacity = "1";
+          this.startHintCycle();
+        }
+      }
+      this.handleInput();
+    });
+    this.searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { this.hidePopup(); return; }
+      if (e.key === "Tab" && !this.searchInput.value && this.hintEl) {
+        e.preventDefault();
+        this.searchInput.value = this.hintExamples[this.hintIndex];
+        this.hintEl.style.opacity = "0";
+        this.searchInput.dispatchEvent(new Event("input"));
+      }
+    });
 
     this.outsideHandler = (e: MouseEvent) => {
       if (!this.wrapper.contains(e.target as Node)) this.hidePopup();
@@ -299,6 +337,10 @@ export class Matai {
     this.popup.style.display = "block";
     this.clampPopup();
     this.searchInput.focus({ preventScroll: true });
+    if (this.hintEl && !this.searchInput.value) {
+      this.hintEl.style.opacity = "1";
+      this.startHintCycle();
+    }
   }
 
   private clampPopup(): void {
@@ -334,6 +376,31 @@ export class Matai {
     this.open = false;
     this.popup.style.display = "none";
     this.searchInput.value = "";
+    this.stopHintCycle();
+    this.hintIndex = 0;
+    if (this.hintEl) {
+      this.hintEl.textContent = this.hintExamples[0];
+      this.hintEl.style.opacity = "1";
+    }
+  }
+
+  private startHintCycle(): void {
+    if (this.hintTimer) return;
+    this.hintTimer = setInterval(() => this.cycleHint(), 2500);
+  }
+
+  private stopHintCycle(): void {
+    if (this.hintTimer) { clearInterval(this.hintTimer); this.hintTimer = null; }
+  }
+
+  private cycleHint(): void {
+    if (!this.hintEl) return;
+    this.hintEl.classList.add("matai-hint-fade");
+    setTimeout(() => {
+      this.hintIndex = (this.hintIndex + 1) % this.hintExamples.length;
+      this.hintEl!.textContent = this.hintExamples[this.hintIndex];
+      this.hintEl!.classList.remove("matai-hint-fade");
+    }, 350);
   }
 
   getValue(): DateValue {
@@ -362,6 +429,7 @@ export class Matai {
   }
 
   destroy(): void {
+    this.stopHintCycle();
     document.removeEventListener("mousedown", this.outsideHandler);
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.wrapper.remove();
