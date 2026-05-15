@@ -6,6 +6,8 @@ export interface LocaleTokens {
     day: string[];
     week: string[];
     month: string[];
+    year: string[];
+    quarter: string[];
   };
   inPrefix: string[];
   agoSuffix: string[];
@@ -15,12 +17,28 @@ export interface LocaleTokens {
   rangeConnectors: string[];
   rangeFromPrefix: string[];
   rangeToSuffix: string[];
+  namedRanges: {
+    thisWeek: string[]; lastWeek: string[]; nextWeek: string[];
+    thisMonth: string[]; lastMonth: string[]; nextMonth: string[];
+    thisYear: string[]; lastYear: string[]; nextYear: string[];
+    thisQuarter: string[]; lastQuarter: string[]; nextQuarter: string[];
+    weekend: string[];
+  };
+  nUnitsPastSuffix: string[];
+  nUnitsFutureSuffix: string[];
+  weekdayOnPrefix: string[];
+  dayNumericPrefix: string[];
+  monthNamePrefix: string[];
+  pastPrefix: string[];
+  rangePairs: [string, string][];
 }
 
 export interface Locale {
   code: string;
   rtl: boolean;
   weekStart: number;
+  weekendStart: number;
+  requireYearForMonthRange: boolean;
   days: string[];
   daysShort: string[];
   months: string[];

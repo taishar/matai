@@ -6,7 +6,9 @@
       "Bash(Sort-Object FullName)",
       "Bash(Format-Table -AutoSize)",
       "Bash(bun run *)",
-      "Bash(bash *)"
+      "Bash(bash *)",
+      "Bash(bun test *)",
+      "Bash(node *)"
     ]
   }
 }
