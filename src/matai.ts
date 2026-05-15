@@ -72,6 +72,7 @@ export class Matai {
   private badgeEl: HTMLElement | null = null;
   private open = false;
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private searchInput!: HTMLInputElement;
   private outsideHandler: (e: MouseEvent) => void;
 
   constructor(el: HTMLElement | string, options: MataiOptions = {}) {
@@ -81,7 +82,7 @@ export class Matai {
     this.langs = Array.isArray(rawLang) ? rawLang : [rawLang];
     this.activeLang = this.langs[0];
     this.mode = options.mode ?? "single";
-    this.format = options.format ?? "YYYY-MM-DD";
+    this.format = options.format ?? "DD/MM/YYYY";
     this.onChange = options.onChange ?? null;
 
     this.wrapper = document.createElement("div");
@@ -91,8 +92,10 @@ export class Matai {
     this.input = document.createElement("input");
     this.input.type = "text";
     this.input.className = "matai-input";
-    this.input.placeholder = options.placeholder ??
-      (this.mode === "range" ? this.activeLocale().placeholderRange : this.activeLocale().placeholder);
+    this.input.readOnly = true;
+    this.input.placeholder = this.mode === "range"
+      ? `${this.format.toLowerCase()} – ${this.format.toLowerCase()}`
+      : this.format.toLowerCase();
     if (this.activeLocale().rtl) {
       this.wrapper.setAttribute("dir", "rtl");
       this.input.setAttribute("dir", "rtl");
@@ -101,6 +104,14 @@ export class Matai {
     this.popup = document.createElement("div");
     this.popup.className = "matai-popup" + (this.mode === "range" ? " matai-popup-range" : "");
     this.popup.style.display = "none";
+
+    this.searchInput = document.createElement("input");
+    this.searchInput.type = "text";
+    this.searchInput.className = "matai-search";
+    this.searchInput.placeholder = options.placeholder ??
+      (this.mode === "range" ? this.activeLocale().placeholderRange : this.activeLocale().placeholder);
+    if (this.activeLocale().rtl) this.searchInput.setAttribute("dir", "rtl");
+    this.popup.appendChild(this.searchInput);
 
     if (this.langs.length > 1) this.popup.appendChild(this.buildLangToggle());
 
@@ -137,8 +148,11 @@ export class Matai {
     this.wrapper.appendChild(this.popup);
     target.replaceWith(this.wrapper);
 
-    this.input.addEventListener("focus", () => this.showPopup());
-    this.input.addEventListener("input", () => this.handleInput());
+    this.input.addEventListener("click", () => {
+      if (this.open) this.hidePopup();
+      else this.showPopup();
+    });
+    this.searchInput.addEventListener("input", () => this.handleInput());
 
     this.outsideHandler = (e: MouseEvent) => {
       if (!this.wrapper.contains(e.target as Node)) this.hidePopup();
@@ -219,9 +233,11 @@ export class Matai {
     if (locale.rtl) {
       this.wrapper.setAttribute("dir", "rtl");
       this.input.setAttribute("dir", "rtl");
+      this.searchInput.setAttribute("dir", "rtl");
     } else {
       this.wrapper.removeAttribute("dir");
       this.input.removeAttribute("dir");
+      this.searchInput.removeAttribute("dir");
     }
     this.popup.querySelectorAll<HTMLElement>(".matai-lang-btn").forEach(btn => {
       btn.classList.toggle("matai-lang-active", btn.dataset.lang === lang);
@@ -233,13 +249,19 @@ export class Matai {
   private handleInput(): void {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
-      const parsed = parse(this.input.value, this.activeLocale(), this.mode);
+      const parsed = parse(this.searchInput.value, this.activeLocale(), this.mode);
       if (parsed) {
         this.value = parsed;
         this.rangeStep = 0;
         this.rangeStart = null;
         this.setCalendarsSelected(parsed);
-        if (Array.isArray(parsed)) this.updateBadge(parsed[0], parsed[1]);
+        if (Array.isArray(parsed)) {
+          this.updateBadge(parsed[0], parsed[1]);
+          this.input.value = `${formatDate(parsed[0], this.format)} - ${formatDate(parsed[1], this.format)}`;
+        } else {
+          this.input.value = formatDate(parsed, this.format);
+        }
+        this.onChange?.(this.value);
       }
     }, 300);
   }
@@ -302,6 +324,7 @@ export class Matai {
     this.open = true;
     this.popup.style.display = "block";
     this.clampPopup();
+    this.searchInput.focus({ preventScroll: true });
   }
 
   private clampPopup(): void {
@@ -336,6 +359,7 @@ export class Matai {
     if (!this.open) return;
     this.open = false;
     this.popup.style.display = "none";
+    this.searchInput.value = "";
   }
 
   getValue(): DateValue {

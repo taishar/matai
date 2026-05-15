@@ -1,7 +1,10 @@
 .matai-wrapper { position: relative; display: inline-block; }
 
-.matai-input { padding: 8px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 8px; width: 220px; box-sizing: border-box; outline: none; transition: border-color 0.15s; }
+.matai-input { padding: 8px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 8px; width: 220px; box-sizing: border-box; outline: none; transition: border-color 0.15s; cursor: pointer; user-select: none; }
 .matai-input:focus { border-color: var(--matai-color, #1a73e8); }
+
+.matai-search { width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 13px; border: 1px solid #e0e0e0; border-radius: 8px; outline: none; margin-bottom: 10px; transition: border-color 0.15s; }
+.matai-search:focus { border-color: var(--matai-color, #1a73e8); }
 
 .matai-popup { position: absolute; top: calc(100% + 6px); left: 0; z-index: 1000; background: #fff; border-radius: 16px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.10), 0 8px 28px rgba(0,0,0,.14); min-width: 240px; max-width: calc(100vw - 16px); }
 [dir="rtl"] .matai-popup { left: auto; right: 0; }
