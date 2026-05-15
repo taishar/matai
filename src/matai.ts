@@ -1,7 +1,7 @@
 import type { Lang, Mode, DateValue, MataiOptions, Locale } from "./types";
 import { en } from "./i18n/en";
 import { he } from "./i18n/he";
-import { parse } from "./parser";
+import { parse, parseWithAutoDetect } from "./parser";
 import { Calendar } from "./calendar";
 
 const LOCALES: Record<Lang, Locale> = { en, he };
@@ -56,6 +56,7 @@ function monthIndex(year: number, month: number): number {
 export class Matai {
   private langs: Lang[];
   private activeLang: Lang;
+  private autoDetectLocales: Locale[];
   private mode: Mode;
   private format: string;
   private onChange: ((v: DateValue) => void) | null;
@@ -78,9 +79,18 @@ export class Matai {
   constructor(el: HTMLElement | string, options: MataiOptions = {}) {
     const target = resolveElement(el);
 
-    const rawLang = options.lang ?? "en";
-    this.langs = Array.isArray(rawLang) ? rawLang : [rawLang];
-    this.activeLang = this.langs[0];
+    if (options.lang === undefined || Array.isArray(options.lang)) {
+      const ordered: Lang[] = Array.isArray(options.lang)
+        ? options.lang
+        : (Object.keys(LOCALES) as Lang[]);
+      this.langs = [ordered[0]];
+      this.activeLang = ordered[0];
+      this.autoDetectLocales = ordered.map(l => LOCALES[l]);
+    } else {
+      this.langs = [options.lang];
+      this.activeLang = options.lang;
+      this.autoDetectLocales = [];
+    }
     this.mode = options.mode ?? "single";
     this.format = options.format ?? "DD/MM/YYYY";
     this.onChange = options.onChange ?? null;
@@ -112,8 +122,6 @@ export class Matai {
       (this.mode === "range" ? this.activeLocale().placeholderRange : this.activeLocale().placeholder);
     if (this.activeLocale().rtl) this.searchInput.setAttribute("dir", "rtl");
     this.popup.appendChild(this.searchInput);
-
-    if (this.langs.length > 1) this.popup.appendChild(this.buildLangToggle());
 
     const now = new Date();
     this.calStart = new Calendar(this.activeLocale(), this.mode, now.getFullYear(), now.getMonth());
@@ -210,46 +218,12 @@ export class Matai {
     });
   }
 
-  private buildLangToggle(): HTMLElement {
-    const bar = document.createElement("div");
-    bar.className = "matai-lang-toggle";
-    this.langs.forEach(lang => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "matai-lang-btn" + (lang === this.activeLang ? " matai-lang-active" : "");
-      btn.textContent = lang.toUpperCase();
-      btn.dataset.lang = lang;
-      btn.addEventListener("click", () => this.switchLang(lang));
-      bar.appendChild(btn);
-    });
-    return bar;
-  }
-
-  private switchLang(lang: Lang): void {
-    this.activeLang = lang;
-    const locale = this.activeLocale();
-    this.calStart.setLocale(locale);
-    this.calEnd?.setLocale(locale);
-    if (locale.rtl) {
-      this.wrapper.setAttribute("dir", "rtl");
-      this.input.setAttribute("dir", "rtl");
-      this.searchInput.setAttribute("dir", "rtl");
-    } else {
-      this.wrapper.removeAttribute("dir");
-      this.input.removeAttribute("dir");
-      this.searchInput.removeAttribute("dir");
-    }
-    this.popup.querySelectorAll<HTMLElement>(".matai-lang-btn").forEach(btn => {
-      btn.classList.toggle("matai-lang-active", btn.dataset.lang === lang);
-    });
-    const confirmed = Array.isArray(this.value) ? this.value : null;
-    this.updateBadge(confirmed?.[0] ?? null, confirmed?.[1] ?? null);
-  }
-
   private handleInput(): void {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
-      const parsed = parse(this.searchInput.value, this.activeLocale(), this.mode);
+      const parsed = this.autoDetectLocales.length
+        ? parseWithAutoDetect(this.searchInput.value, this.autoDetectLocales, this.mode)
+        : parse(this.searchInput.value, this.activeLocale(), this.mode);
       if (parsed) {
         this.value = parsed;
         this.rangeStep = 0;

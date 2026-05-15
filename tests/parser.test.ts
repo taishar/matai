@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { parse } from "../src/parser";
+import { parse, parseWithAutoDetect } from "../src/parser";
 import { en } from "../src/i18n/en";
 import { he } from "../src/i18n/he";
 import type { DateValue } from "../src/types";
@@ -442,4 +442,25 @@ describe("range/HE - requireYearForMonthRange guard", () => {
     expect(parse("ינואר", he, "range")).toBeNull());
   test("אוגוסט alone → null in HE range mode", () =>
     expect(parse("אוגוסט", he, "range")).toBeNull());
+});
+
+describe("parseWithAutoDetect", () => {
+  test("Hebrew input with [en, he] - tries en first (fails), succeeds with he", () => {
+    const result = parseWithAutoDetect("השבוע", [en, he], "range");
+    expect(Array.isArray(result)).toBe(true);
+  });
+  test("English input with [he, en] - tries he first (fails), succeeds with en", () => {
+    const result = parseWithAutoDetect("next week", [he, en], "range");
+    expect(Array.isArray(result)).toBe(true);
+  });
+  test("Ambiguous numeric date uses first locale (en wins mdy order)", () => {
+    const result = parseWithAutoDetect("01/15/2024", [en, he], "single");
+    expectSingle(result, d(2024, 1, 15));
+  });
+  test("Unrecognizable input returns null", () => {
+    expect(parseWithAutoDetect("zzz not a date", [en, he], "single")).toBeNull();
+  });
+  test("Empty input returns null", () => {
+    expect(parseWithAutoDetect("", [en, he], "single")).toBeNull();
+  });
 });

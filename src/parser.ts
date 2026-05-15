@@ -482,6 +482,14 @@ function splitRange(input: string, locale: Locale): [string, string] | null {
   return null;
 }
 
+export function parseWithAutoDetect(input: string, locales: Locale[], mode: Mode): DateValue {
+  for (const locale of locales) {
+    const result = parse(input, locale, mode);
+    if (result !== null) return result;
+  }
+  return null;
+}
+
 export function parse(input: string, locale: Locale, mode: Mode): DateValue {
   const trimmed = input.trim();
   if (!trimmed) return null;

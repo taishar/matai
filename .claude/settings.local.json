@@ -8,7 +8,8 @@
       "Bash(bun run *)",
       "Bash(bash *)",
       "Bash(bun test *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Omri\\\\projects\\\\datepicker\" -Recurse)"
     ]
   }
 }
