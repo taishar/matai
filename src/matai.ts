@@ -81,6 +81,7 @@ export class Matai {
   private hintExamples: string[] = [];
   private hintIndex = 0;
   private hintTimer: ReturnType<typeof setInterval> | null = null;
+  private clearBtn: HTMLButtonElement | null = null;
 
   constructor(el: HTMLElement | string, options: MataiOptions = {}) {
     const target = resolveElement(el);
@@ -148,6 +149,24 @@ export class Matai {
     this.hintEl.appendChild(tabBadge);
 
     searchWrapper.appendChild(this.hintEl);
+
+    this.clearBtn = document.createElement("button");
+    this.clearBtn.type = "button";
+    this.clearBtn.className = "matai-clear-btn";
+    this.clearBtn.setAttribute("aria-label", "Clear");
+    this.clearBtn.style.display = "none";
+    searchWrapper.appendChild(this.clearBtn);
+
+    this.clearBtn.addEventListener("click", () => {
+      this.clear();
+      this.searchInput.value = "";
+      if (this.hintEl && this.hintTextEl) {
+        this.hintEl.style.opacity = "1";
+        this.hintTextEl.textContent = this.hintExamples[0];
+      }
+      this.startHintCycle();
+      this.updateClearBtn();
+    });
 
     this.popup.appendChild(searchWrapper);
 
@@ -284,6 +303,7 @@ export class Matai {
           this.input.value = formatDate(parsed, this.format);
         }
         this.onChange?.(this.value);
+        this.updateClearBtn();
       }
     }, 300);
   }
@@ -294,6 +314,7 @@ export class Matai {
       this.input.value = formatDate(d, this.format);
       this.setCalendarsSelected(d);
       this.onChange?.(this.value);
+      this.updateClearBtn();
       this.hidePopup();
     } else {
       if (this.rangeStep === 0) {
@@ -313,6 +334,7 @@ export class Matai {
         this.rangeStep = 0;
         this.rangeStart = null;
         this.onChange?.(this.value);
+        this.updateClearBtn();
         this.hidePopup();
       }
     }
@@ -341,11 +363,17 @@ export class Matai {
     this.calEnd?.setSelectedNoJump(value);
   }
 
+  private updateClearBtn(): void {
+    if (!this.clearBtn) return;
+    this.clearBtn.style.display = this.value !== null ? "flex" : "none";
+  }
+
   private showPopup(): void {
     if (this.open) return;
     this.open = true;
     this.popup.style.display = "block";
     this.clampPopup();
+    this.updateClearBtn();
     this.searchInput.focus({ preventScroll: true });
     if (this.hintEl && !this.searchInput.value) {
       this.hintEl.style.opacity = "1";
