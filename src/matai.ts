@@ -476,6 +476,7 @@ export class Matai {
     this.open = true;
     this.popup.style.display = "block";
     this.clampPopup();
+    if (this.timeColumn && this.timeStart === null) this.timeColumn.scrollToNow();
     this.updateClearBtn();
     this.searchInput.focus({ preventScroll: true });
     if (this.hintEl && !this.searchInput.value) {

@@ -122,6 +122,11 @@ export class TimeColumn {
     this.selectionEl.style.display = "none";
   }
 
+  scrollToNow(): void {
+    const now = new Date();
+    this.scrollTo(now.getHours() * 60 + now.getMinutes());
+  }
+
   private scrollTo(minutes: number): void {
     const targetTop = (minutes / 15) * SLOT_H;
     this.el.scrollTop = Math.max(0, targetTop - this.el.clientHeight / 3);
