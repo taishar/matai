@@ -381,9 +381,7 @@ export class Matai {
       this.pendingDate = d;
       this.calStart.setSelectedNoJump(d);
       this.setSearchValue(formatDate(d, this.format));
-      this.timeColumn?.reset();
-      this.timeStart = null;
-      this.timeEnd = null;
+      if (this.timeStart !== null && this.timeEnd !== null) this.commitEvent();
     } else {
       if (this.rangeStep === 0) {
         this.rangeStart = d;
