@@ -57,4 +57,6 @@ export const en: Locale = {
   },
   weekendStart: 6,
   requireYearForMonthRange: false,
+  prevMonth: "Previous month",
+  nextMonth: "Next month",
 };

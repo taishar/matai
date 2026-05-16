@@ -110,16 +110,21 @@ export class Calendar {
     const prev = document.createElement("button");
     prev.type = "button";
     prev.className = "matai-nav matai-prev";
+    prev.setAttribute("tabindex", "-1");
+    prev.setAttribute("aria-label", this.locale.prevMonth);
     prev.innerHTML = `<svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     prev.addEventListener("click", () => this.navigate(-1));
 
     const title = document.createElement("span");
     title.className = "matai-title";
+    title.setAttribute("aria-live", "polite");
     title.textContent = `${this.locale.months[this.month]} ${this.year}`;
 
     const next = document.createElement("button");
     next.type = "button";
     next.className = "matai-nav matai-next";
+    next.setAttribute("tabindex", "-1");
+    next.setAttribute("aria-label", this.locale.nextMonth);
     next.innerHTML = `<svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     next.addEventListener("click", () => this.navigate(1));
 
@@ -136,7 +141,10 @@ export class Calendar {
     for (let i = 0; i < 7; i++) {
       const cell = document.createElement("div");
       cell.className = "matai-wday";
-      cell.textContent = this.locale.daysShort[(start + i) % 7];
+      const abbr = document.createElement("abbr");
+      abbr.title = this.locale.days[(start + i) % 7];
+      abbr.textContent = this.locale.daysShort[(start + i) % 7];
+      cell.appendChild(abbr);
       row.appendChild(cell);
     }
     return row;
@@ -180,6 +188,9 @@ export class Calendar {
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "matai-day";
+    cell.setAttribute("tabindex", "-1");
+    cell.setAttribute("aria-label", `${this.locale.days[d.getDay()]}, ${this.locale.months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`);
+    cell.setAttribute("aria-pressed", "false");
     const label = document.createElement("span");
     label.textContent = String(d.getDate());
     cell.appendChild(label);
@@ -222,6 +233,12 @@ export class Calendar {
         if (isBetween(d, lo, hi)) cell.dataset.inRange = "1";
       }
     }
+
+    if (sameDay(d, todayDate)) cell.setAttribute("aria-current", "date");
+    else cell.removeAttribute("aria-current");
+
+    const pressed = cell.dataset.selected === "1" || cell.dataset.rangeStart === "1" || cell.dataset.rangeEnd === "1";
+    cell.setAttribute("aria-pressed", pressed ? "true" : "false");
   }
 
   private updateGridClasses(): void {

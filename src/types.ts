@@ -54,6 +54,8 @@ export interface Locale {
   examplesEvent: string[];
   tokens: LocaleTokens;
   numericOrder: "dmy" | "mdy";
+  prevMonth: string;
+  nextMonth: string;
 }
 
 export type Lang = "en" | "he";
