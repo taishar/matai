@@ -11,8 +11,6 @@ export class TimeColumn {
   private mode: "single" | "range";
   private grid!: HTMLElement;
   private selectionEl!: HTMLElement;
-  private selectedStart: number | null = null;
-  private selectedEnd: number | null = null;
 
   constructor(mode: "single" | "range") {
     this.mode = mode;
@@ -67,7 +65,6 @@ export class TimeColumn {
     if (this.mode === "single") {
       this.grid.addEventListener("click", (e) => {
         const m = this.minutesAt(e.clientY);
-        this.selectedStart = m;
         this.placeSelection(m, m + 15);
         this.onSelect?.(m);
       });
@@ -86,8 +83,6 @@ export class TimeColumn {
         const cur = this.minutesAt(e.clientY);
         const [lo, hi] = dragStart <= cur ? [dragStart, cur + 15] : [cur, dragStart + 15];
         const end = Math.min(hi, 1440);
-        this.selectedStart = lo;
-        this.selectedEnd = end;
         this.placeSelection(lo, end);
         dragStart = null;
         document.removeEventListener("mousemove", onMove);
@@ -106,19 +101,15 @@ export class TimeColumn {
   }
 
   setSelected(start: number | null, end?: number | null): void {
-    this.selectedStart = start;
-    this.selectedEnd = end ?? null;
     if (start === null) {
       this.selectionEl.style.display = "none";
     } else {
       this.placeSelection(start, end != null ? end : start + 15);
+      this.scrollTo(start);
     }
-    if (start !== null) this.scrollTo(start);
   }
 
   reset(): void {
-    this.selectedStart = null;
-    this.selectedEnd = null;
     this.selectionEl.style.display = "none";
   }
 

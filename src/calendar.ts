@@ -148,34 +148,35 @@ export class Calendar {
 
     const firstDay = new Date(this.year, this.month, 1);
     const lastDay = new Date(this.year, this.month + 1, 0);
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
 
     const start = this.locale.weekStart;
     const offset = ((firstDay.getDay() - start + 7) % 7);
 
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+
     const prevMonthLast = new Date(this.year, this.month, 0);
     for (let i = offset - 1; i >= 0; i--) {
       const d = new Date(this.year, this.month - 1, prevMonthLast.getDate() - i);
-      grid.appendChild(this.buildCell(d, true));
+      grid.appendChild(this.buildCell(d, true, todayDate));
     }
 
     for (let day = 1; day <= lastDay.getDate(); day++) {
       const d = new Date(this.year, this.month, day);
-      grid.appendChild(this.buildCell(d, false));
+      grid.appendChild(this.buildCell(d, false, todayDate));
     }
 
     const total = offset + lastDay.getDate();
     const remainder = total % 7 === 0 ? 0 : 7 - (total % 7);
     for (let i = 1; i <= remainder; i++) {
       const d = new Date(this.year, this.month + 1, i);
-      grid.appendChild(this.buildCell(d, true));
+      grid.appendChild(this.buildCell(d, true, todayDate));
     }
 
     return grid;
   }
 
-  private buildCell(d: Date, otherMonth: boolean): HTMLElement {
+  private buildCell(d: Date, otherMonth: boolean, todayDate: Date): HTMLElement {
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "matai-day";
@@ -185,7 +186,7 @@ export class Calendar {
     cell.dataset.date = toLocalISO(d);
     if (otherMonth) cell.dataset.otherMonth = "1";
 
-    this.applyClasses(cell, d);
+    this.applyClasses(cell, d, todayDate);
 
     cell.addEventListener("click", () => this.selectCallback?.(d));
     cell.addEventListener("mouseenter", () => {
@@ -195,9 +196,7 @@ export class Calendar {
     return cell;
   }
 
-  private applyClasses(cell: HTMLElement, d: Date): void {
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
+  private applyClasses(cell: HTMLElement, d: Date, todayDate: Date): void {
 
     if (sameDay(d, todayDate)) cell.dataset.today = "1"; else delete cell.dataset.today;
     delete cell.dataset.selected;
@@ -227,11 +226,13 @@ export class Calendar {
 
   private updateGridClasses(): void {
     if (!this.gridEl) return;
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
     this.gridEl.querySelectorAll<HTMLElement>(".matai-day").forEach(cell => {
       const iso = cell.dataset.date;
       if (!iso) return;
       const d = new Date(iso + "T00:00:00");
-      this.applyClasses(cell, d);
+      this.applyClasses(cell, d, todayDate);
     });
   }
 }

@@ -176,6 +176,8 @@ function startOfYear(d: Date): Date { return new Date(d.getFullYear(), 0, 1); }
 function endOfYear(d: Date): Date { return new Date(d.getFullYear(), 11, 31); }
 function startOfQuarter(year: number, q: number): Date { return new Date(year, q * 3, 1); }
 function endOfQuarter(year: number, q: number): Date { return new Date(year, q * 3 + 3, 0); }
+function prevQuarterQ(q: number, yr: number): [number, number] { return q === 0 ? [3, yr - 1] : [q - 1, yr]; }
+function nextQuarterQ(q: number, yr: number): [number, number] { return q === 3 ? [0, yr + 1] : [q + 1, yr]; }
 
 function computeWeekend(dir: "this" | "last" | "next", t: Date, locale: Locale): [Date, Date] {
   const ws = locale.weekendStart;
@@ -228,13 +230,11 @@ function parseNamedRange(input: string, locale: Locale): [Date, Date] | null {
   if (matchPhrase(nr.nextYear))    return yearRange(addYears(t, 1));
   if (matchPhrase(nr.thisQuarter)) return quarterRange(curQyr, curQ);
   if (matchPhrase(nr.lastQuarter)) {
-    let q = curQ - 1, qyr = curQyr;
-    if (q < 0) { q = 3; qyr--; }
+    const [q, qyr] = prevQuarterQ(curQ, curQyr);
     return quarterRange(qyr, q);
   }
   if (matchPhrase(nr.nextQuarter)) {
-    let q = curQ + 1, qyr = curQyr;
-    if (q > 3) { q = 0; qyr++; }
+    const [q, qyr] = nextQuarterQ(curQ, curQyr);
     return quarterRange(qyr, q);
   }
   if (matchPhrase(nr.weekend)) return computeWeekend("this", t, locale);
@@ -277,8 +277,7 @@ function parseNamedRange(input: string, locale: Locale): [Date, Date] | null {
       if (locale.tokens.units.month.some(u => what === u.toLowerCase()))   return monthRange(addMonths(t, -1));
       if (locale.tokens.units.year.some(u => what === u.toLowerCase()))    return yearRange(addYears(t, -1));
       if (locale.tokens.units.quarter.some(u => what === u.toLowerCase())) {
-        let q = curQ - 1, qyr = curQyr;
-        if (q < 0) { q = 3; qyr--; }
+        const [q, qyr] = prevQuarterQ(curQ, curQyr);
         return quarterRange(qyr, q);
       }
       if (isWeekend(what)) return computeWeekend("last", t, locale);
@@ -298,8 +297,7 @@ function parseNamedRange(input: string, locale: Locale): [Date, Date] | null {
       if (locale.tokens.units.month.some(u => what === u.toLowerCase()))   return monthRange(addMonths(t, 1));
       if (locale.tokens.units.year.some(u => what === u.toLowerCase()))    return yearRange(addYears(t, 1));
       if (locale.tokens.units.quarter.some(u => what === u.toLowerCase())) {
-        let q = curQ + 1, qyr = curQyr;
-        if (q > 3) { q = 0; qyr++; }
+        const [q, qyr] = nextQuarterQ(curQ, curQyr);
         return quarterRange(qyr, q);
       }
       if (isWeekend(what)) return computeWeekend("next", t, locale);

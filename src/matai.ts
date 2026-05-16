@@ -56,6 +56,14 @@ function monthIndex(year: number, month: number): number {
   return year * 12 + month;
 }
 
+function dateToMinutes(d: Date): number {
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+function dateOnly(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 export class Matai {
   private langs: Lang[];
   private activeLang: Lang;
@@ -88,6 +96,7 @@ export class Matai {
   private hintExamples: string[] = [];
   private hintIndex = 0;
   private hintTimer: ReturnType<typeof setInterval> | null = null;
+  private hintFadeTimer: ReturnType<typeof setTimeout> | null = null;
   private clearBtn: HTMLButtonElement | null = null;
 
   constructor(el: HTMLElement | string, options: MataiOptions = {}) {
@@ -174,12 +183,10 @@ export class Matai {
 
     this.clearBtn.addEventListener("click", () => {
       this.clear();
-      this.onChange?.(null, () => this.close());
+      this.onChange?.(null, () => this.hidePopup());
       this.searchInput.value = "";
-      if (this.hintEl && this.hintTextEl) {
-        this.hintEl.style.opacity = "1";
-        this.hintTextEl.textContent = this.hintExamples[0];
-      }
+      if (this.hintTextEl) this.hintTextEl.textContent = this.hintExamples[0];
+      this.showHint();
       this.startHintCycle();
       this.updateClearBtn();
     });
@@ -222,7 +229,6 @@ export class Matai {
       this.popup.appendChild(calTimeWrapper);
     } else {
       this.popup.appendChild(this.calStart.getElement());
-      this.wireHover(this.calStart);
     }
 
     this.wrapper.appendChild(this.input);
@@ -234,23 +240,21 @@ export class Matai {
       else this.showPopup();
     });
     this.searchInput.addEventListener("input", () => {
-      if (this.hintEl) {
-        if (this.searchInput.value) {
-          this.hintEl.style.opacity = "0";
-          this.stopHintCycle();
-        } else {
-          this.hintEl.style.opacity = "1";
-          this.startHintCycle();
-        }
+      if (this.searchInput.value) {
+        this.hideHint();
+        this.stopHintCycle();
+      } else {
+        this.showHint();
+        this.startHintCycle();
       }
       this.handleInput();
     });
     this.searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Escape" || e.key === "Enter") { this.hidePopup(); return; }
-      if (e.key === "Tab" && !this.searchInput.value && this.hintEl) {
+      if (e.key === "Tab" && !this.searchInput.value) {
         e.preventDefault();
         this.searchInput.value = this.hintExamples[this.hintIndex];
-        this.hintEl.style.opacity = "0";
+        this.hideHint();
         this.searchInput.dispatchEvent(new Event("input"));
       }
     });
@@ -263,6 +267,28 @@ export class Matai {
 
   private activeLocale(): Locale {
     return LOCALES[this.activeLang];
+  }
+
+  private showHint(): void {
+    if (!this.hintEl) return;
+    this.hintEl.style.opacity = "1";
+  }
+
+  private hideHint(): void {
+    if (!this.hintEl) return;
+    this.hintEl.style.opacity = "0";
+  }
+
+  private formatRangeText(lo: Date, hi: Date): string {
+    return `${formatDate(lo, this.format)} - ${formatDate(hi, this.format)}`;
+  }
+
+  private formatDatetimeText(date: Date, minutes: number): string {
+    return `${formatDate(date, this.format)} ${formatMinutes(minutes)}`;
+  }
+
+  private formatEventText(date: Date, lo: number, hi: number): string {
+    return `${formatDate(date, this.format)} ${formatMinutes(lo)} – ${formatMinutes(hi)}`;
   }
 
   private updateBadge(start: Date | null, end: Date | null): void {
@@ -324,53 +350,50 @@ export class Matai {
         if (Array.isArray(parsed)) {
           if (this.mode === "event") {
             const [s, e] = parsed;
-            this.pendingDate = new Date(s.getFullYear(), s.getMonth(), s.getDate());
-            this.timeStart = s.getHours() * 60 + s.getMinutes();
-            this.timeEnd = e.getHours() * 60 + e.getMinutes();
+            this.pendingDate = dateOnly(s);
+            this.timeStart = dateToMinutes(s);
+            this.timeEnd = dateToMinutes(e);
             this.setCalendarsSelected(this.pendingDate);
             this.timeColumn?.setSelected(this.timeStart, this.timeEnd);
-            this.input.value = `${formatDate(this.pendingDate, this.format)} ${formatMinutes(this.timeStart)} – ${formatMinutes(this.timeEnd)}`;
+            this.input.value = this.formatEventText(this.pendingDate, this.timeStart, this.timeEnd);
           } else {
             this.setCalendarsSelected(parsed);
             this.updateBadge(parsed[0], parsed[1]);
-            this.input.value = `${formatDate(parsed[0], this.format)} - ${formatDate(parsed[1], this.format)}`;
+            this.input.value = this.formatRangeText(parsed[0], parsed[1]);
           }
         } else {
           if (this.mode === "datetime") {
-            this.pendingDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-            this.timeStart = parsed.getHours() * 60 + parsed.getMinutes();
+            this.pendingDate = dateOnly(parsed);
+            this.timeStart = dateToMinutes(parsed);
             this.setCalendarsSelected(parsed);
             this.timeColumn?.setSelected(this.timeStart);
-            this.input.value = `${formatDate(parsed, this.format)} ${formatMinutes(this.timeStart)}`;
+            this.input.value = this.formatDatetimeText(parsed, this.timeStart);
           } else {
             this.setCalendarsSelected(parsed);
             this.input.value = formatDate(parsed, this.format);
           }
         }
-        this.onChange?.(this.value, () => this.close());
+        this.onChange?.(this.value, () => this.hidePopup());
         this.updateClearBtn();
       }
     }, 300);
-  }
-
-  private close(): void {
-    this.hidePopup();
   }
 
   private setSearchValue(text: string): void {
     if (this.debounceTimer) { clearTimeout(this.debounceTimer); this.debounceTimer = null; }
     this.searchInput.value = text;
     this.stopHintCycle();
-    if (this.hintEl) this.hintEl.style.opacity = "0";
+    this.hideHint();
   }
 
   private handleSelect(d: Date): void {
     if (this.mode === "date") {
       this.value = d;
-      this.input.value = formatDate(d, this.format);
-      this.setSearchValue(formatDate(d, this.format));
+      const text = formatDate(d, this.format);
+      this.input.value = text;
+      this.setSearchValue(text);
       this.setCalendarsSelected(d);
-      this.onChange?.(this.value, () => this.close());
+      this.onChange?.(this.value, () => this.hidePopup());
       this.updateClearBtn();
     } else if (this.mode === "datetime") {
       this.pendingDate = d;
@@ -392,15 +415,16 @@ export class Matai {
         const start = this.rangeStart!;
         const [lo, hi] = d >= start ? [start, d] : [d, start];
         this.value = [lo, hi];
-        this.input.value = `${formatDate(lo, this.format)} - ${formatDate(hi, this.format)}`;
-        this.setSearchValue(`${formatDate(lo, this.format)} - ${formatDate(hi, this.format)}`);
+        const text = this.formatRangeText(lo, hi);
+        this.input.value = text;
+        this.setSearchValue(text);
         this.setCalendarsSelectedNoJump([lo, hi]);
         this.calStart.setHoverEnd(null);
         this.calEnd?.setHoverEnd(null);
         this.updateBadge(lo, hi);
         this.rangeStep = 0;
         this.rangeStart = null;
-        this.onChange?.(this.value, () => this.close());
+        this.onChange?.(this.value, () => this.hidePopup());
         this.updateClearBtn();
       }
     }
@@ -417,11 +441,11 @@ export class Matai {
     const d = new Date(this.pendingDate!);
     d.setHours(Math.floor(this.timeStart! / 60), this.timeStart! % 60, 0, 0);
     this.value = d;
-    const text = `${formatDate(d, this.format)} ${formatMinutes(this.timeStart!)}`;
+    const text = this.formatDatetimeText(d, this.timeStart!);
     this.input.value = text;
     this.setSearchValue(text);
     this.setCalendarsSelected(d);
-    this.onChange?.(this.value, () => this.close());
+    this.onChange?.(this.value, () => this.hidePopup());
     this.updateClearBtn();
   }
 
@@ -433,11 +457,11 @@ export class Matai {
     const startDate = new Date(date); startDate.setHours(Math.floor(lo / 60), lo % 60, 0, 0);
     const endDate = new Date(date);   endDate.setHours(Math.floor(hi / 60), hi % 60, 0, 0);
     this.value = [startDate, endDate];
-    const text = `${formatDate(date, this.format)} ${formatMinutes(lo)} – ${formatMinutes(hi)}`;
+    const text = this.formatEventText(date, lo, hi);
     this.input.value = text;
     this.setSearchValue(text);
     this.calStart.setSelectedNoJump(date);
-    this.onChange?.(this.value, () => this.close());
+    this.onChange?.(this.value, () => this.hidePopup());
     this.updateClearBtn();
   }
 
@@ -477,8 +501,8 @@ export class Matai {
     if (this.timeColumn && this.timeStart === null) this.timeColumn.scrollToNow();
     this.updateClearBtn();
     this.searchInput.focus({ preventScroll: true });
-    if (this.hintEl && !this.searchInput.value) {
-      this.hintEl.style.opacity = "1";
+    if (!this.searchInput.value) {
+      this.showHint();
       this.startHintCycle();
     }
   }
@@ -518,10 +542,8 @@ export class Matai {
     this.searchInput.value = "";
     this.stopHintCycle();
     this.hintIndex = 0;
-    if (this.hintEl && this.hintTextEl) {
-      this.hintTextEl.textContent = this.hintExamples[0];
-      this.hintEl.style.opacity = "1";
-    }
+    if (this.hintTextEl) this.hintTextEl.textContent = this.hintExamples[0];
+    this.showHint();
   }
 
   private startHintCycle(): void {
@@ -531,12 +553,14 @@ export class Matai {
 
   private stopHintCycle(): void {
     if (this.hintTimer) { clearInterval(this.hintTimer); this.hintTimer = null; }
+    if (this.hintFadeTimer) { clearTimeout(this.hintFadeTimer); this.hintFadeTimer = null; }
   }
 
   private cycleHint(): void {
     if (!this.hintEl) return;
     this.hintEl.classList.add("matai-hint-fade");
-    setTimeout(() => {
+    this.hintFadeTimer = setTimeout(() => {
+      this.hintFadeTimer = null;
       this.hintIndex = (this.hintIndex + 1) % this.hintExamples.length;
       this.hintTextEl!.textContent = this.hintExamples[this.hintIndex];
       this.hintEl!.classList.remove("matai-hint-fade");
@@ -553,9 +577,9 @@ export class Matai {
     this.rangeStart = null;
     if (date instanceof Date) {
       if (this.mode === "datetime") {
-        this.pendingDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        this.timeStart = date.getHours() * 60 + date.getMinutes();
-        this.input.value = `${formatDate(date, this.format)} ${formatMinutes(this.timeStart)}`;
+        this.pendingDate = dateOnly(date);
+        this.timeStart = dateToMinutes(date);
+        this.input.value = this.formatDatetimeText(date, this.timeStart);
         this.timeColumn?.setSelected(this.timeStart);
       } else {
         this.input.value = formatDate(date, this.format);
@@ -564,14 +588,14 @@ export class Matai {
     } else {
       const [s, e] = date;
       if (this.mode === "event") {
-        this.pendingDate = new Date(s.getFullYear(), s.getMonth(), s.getDate());
-        this.timeStart = s.getHours() * 60 + s.getMinutes();
-        this.timeEnd = e.getHours() * 60 + e.getMinutes();
-        this.input.value = `${formatDate(this.pendingDate, this.format)} ${formatMinutes(this.timeStart)} – ${formatMinutes(this.timeEnd)}`;
+        this.pendingDate = dateOnly(s);
+        this.timeStart = dateToMinutes(s);
+        this.timeEnd = dateToMinutes(e);
+        this.input.value = this.formatEventText(this.pendingDate, this.timeStart, this.timeEnd);
         this.timeColumn?.setSelected(this.timeStart, this.timeEnd);
         this.setCalendarsSelected(this.pendingDate);
       } else {
-        this.input.value = `${formatDate(s, this.format)} - ${formatDate(e, this.format)}`;
+        this.input.value = this.formatRangeText(s, e);
         this.setCalendarsSelected(date);
       }
     }
