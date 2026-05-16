@@ -62,7 +62,7 @@ export class Matai {
   private autoDetectLocales: Locale[];
   private mode: Mode;
   private format: string;
-  private onChange: ((v: DateValue) => void) | null;
+  private onChange: ((v: DateValue, close: () => void) => void) | null;
 
   private value: DateValue = null;
   private rangeStart: Date | null = null;
@@ -174,7 +174,7 @@ export class Matai {
 
     this.clearBtn.addEventListener("click", () => {
       this.clear();
-      this.onChange?.(null);
+      this.onChange?.(null, () => this.close());
       this.searchInput.value = "";
       if (this.hintEl && this.hintTextEl) {
         this.hintEl.style.opacity = "1";
@@ -347,27 +347,40 @@ export class Matai {
             this.input.value = formatDate(parsed, this.format);
           }
         }
-        this.onChange?.(this.value);
+        this.onChange?.(this.value, () => this.close());
         this.updateClearBtn();
       }
     }, 300);
+  }
+
+  private close(): void {
+    this.hidePopup();
+  }
+
+  private setSearchValue(text: string): void {
+    if (this.debounceTimer) { clearTimeout(this.debounceTimer); this.debounceTimer = null; }
+    this.searchInput.value = text;
+    this.stopHintCycle();
+    if (this.hintEl) this.hintEl.style.opacity = "0";
   }
 
   private handleSelect(d: Date): void {
     if (this.mode === "date") {
       this.value = d;
       this.input.value = formatDate(d, this.format);
+      this.setSearchValue(formatDate(d, this.format));
       this.setCalendarsSelected(d);
-      this.onChange?.(this.value);
+      this.onChange?.(this.value, () => this.close());
       this.updateClearBtn();
-      this.hidePopup();
     } else if (this.mode === "datetime") {
       this.pendingDate = d;
       this.calStart.setSelectedNoJump(d);
+      this.setSearchValue(formatDate(d, this.format));
       if (this.timeStart !== null) this.commitDatetime();
     } else if (this.mode === "event") {
       this.pendingDate = d;
       this.calStart.setSelectedNoJump(d);
+      this.setSearchValue(formatDate(d, this.format));
       this.timeColumn?.reset();
       this.timeStart = null;
       this.timeEnd = null;
@@ -376,20 +389,21 @@ export class Matai {
         this.rangeStart = d;
         this.rangeStep = 1;
         this.setCalendarsSelectedNoJump([d, undefined as unknown as Date]);
+        this.setSearchValue(formatDate(d, this.format));
       } else {
         const start = this.rangeStart!;
         const [lo, hi] = d >= start ? [start, d] : [d, start];
         this.value = [lo, hi];
         this.input.value = `${formatDate(lo, this.format)} - ${formatDate(hi, this.format)}`;
+        this.setSearchValue(`${formatDate(lo, this.format)} - ${formatDate(hi, this.format)}`);
         this.setCalendarsSelectedNoJump([lo, hi]);
         this.calStart.setHoverEnd(null);
         this.calEnd?.setHoverEnd(null);
         this.updateBadge(lo, hi);
         this.rangeStep = 0;
         this.rangeStart = null;
-        this.onChange?.(this.value);
+        this.onChange?.(this.value, () => this.close());
         this.updateClearBtn();
-        this.hidePopup();
       }
     }
   }
@@ -405,9 +419,11 @@ export class Matai {
     const d = new Date(this.pendingDate!);
     d.setHours(Math.floor(this.timeStart! / 60), this.timeStart! % 60, 0, 0);
     this.value = d;
-    this.input.value = `${formatDate(d, this.format)} ${formatMinutes(this.timeStart!)}`;
+    const text = `${formatDate(d, this.format)} ${formatMinutes(this.timeStart!)}`;
+    this.input.value = text;
+    this.setSearchValue(text);
     this.setCalendarsSelected(d);
-    this.onChange?.(this.value);
+    this.onChange?.(this.value, () => this.close());
     this.updateClearBtn();
   }
 
@@ -419,9 +435,11 @@ export class Matai {
     const startDate = new Date(date); startDate.setHours(Math.floor(lo / 60), lo % 60, 0, 0);
     const endDate = new Date(date);   endDate.setHours(Math.floor(hi / 60), hi % 60, 0, 0);
     this.value = [startDate, endDate];
-    this.input.value = `${formatDate(date, this.format)} ${formatMinutes(lo)} – ${formatMinutes(hi)}`;
+    const text = `${formatDate(date, this.format)} ${formatMinutes(lo)} – ${formatMinutes(hi)}`;
+    this.input.value = text;
+    this.setSearchValue(text);
     this.calStart.setSelectedNoJump(date);
-    this.onChange?.(this.value);
+    this.onChange?.(this.value, () => this.close());
     this.updateClearBtn();
   }
 

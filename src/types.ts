@@ -63,7 +63,7 @@ export interface MataiOptions {
   lang?: Lang | Lang[];
   mode?: Mode;
   format?: string;
-  onChange?: (value: DateValue) => void;
+  onChange?: (value: DateValue, close: () => void) => void;
   placeholder?: string;
   color?: string;
 }

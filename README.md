@@ -1,22 +1,21 @@
 # Matai מתי
 
-A lightweight, zero-dependency date picker with natural language input. Supports English and Hebrew (RTL), single date and date range selection.
+A lightweight, zero-dependency date picker with natural language input. Supports English and Hebrew (RTL), single date, date range, datetime, and event (date + time range) selection.
 
 **[Live demo](https://taishar.github.io/matai/demo/index.html)**
 
 ## Features
 
 - **Natural language input** — type `tomorrow`, `next Monday`, `in 3 weeks`, `last 30 days`, or `מחר`, `בעוד 3 ימים`
-- **Visual calendar** — click to pick, or type and the calendar follows
+- **Visual calendar** — click to pick, or type and the calendar follows; the search field always reflects what's selected
 - **Hint cycling** — the search field cycles through example phrases; press `Tab` to autocomplete
 - **Date range** — two-calendar range picker with hover preview and duration badge
+- **Datetime & event modes** — date + time, or date + time range
 - **Auto language detection** — pass an array of languages and Matai detects which one you're typing in
 - **Hebrew / RTL** — full right-to-left support
 - **No dependencies** — vanilla TypeScript, single minified JS output (~8kb)
 
 ## Usage
-
-Include the built file and instantiate:
 
 ```html
 <script src="dist/matai.min.js"></script>
@@ -26,7 +25,11 @@ Include the built file and instantiate:
 <script>
   const dp = new Matai('#my-input', {
     lang: 'en',
-    mode: 'single',
+    mode: 'date',
+    onChange: (value, close) => {
+      console.log(value);
+      close(); // call to dismiss the popup
+    },
   });
 </script>
 ```
@@ -35,12 +38,25 @@ Include the built file and instantiate:
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `lang` | `'en' \| 'he' \| ['en','he']` | `'en'` | Language(s). Pass an array to enable auto-detection — Matai picks the language based on what you type. |
-| `mode` | `'single' \| 'range'` | `'single'` | Single date or date range. |
-| `format` | `string` | `'DD/MM/YYYY'` | Output format for the input field. |
+| `lang` | `'en' \| 'he' \| ['en','he']` | `['en','he']` | Language(s). Pass an array to enable auto-detection — Matai picks the language based on what you type. |
+| `mode` | `'date' \| 'range' \| 'datetime' \| 'event'` | `'date'` | Picker mode. `event` is a date with a start–end time range. |
+| `format` | `string` | `'DD/MM/YYYY'` | Output format tokens: `DD`, `MM`, `YYYY`, `HH`, `mm`. |
 | `color` | `string` | `#1a73e8` | Accent color (any CSS color value). |
-| `onChange` | `(value) => void` | — | Called when a date is selected. |
+| `onChange` | `(value, close) => void` | — | Called when a value is selected or typed. `close()` dismisses the popup. |
 | `placeholder` | `string` | locale default | Placeholder for the search input inside the popup. |
+
+### onChange
+
+The popup does not close automatically after selection — call `close()` inside `onChange` when you want to dismiss it:
+
+```js
+onChange: (value, close) => {
+  saveDate(value);
+  close();
+}
+```
+
+This lets you validate or conditionally close (e.g. only after both dates in a range are confirmed).
 
 ## API
 
