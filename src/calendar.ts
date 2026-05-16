@@ -181,6 +181,57 @@ export class Calendar {
       grid.appendChild(this.buildCell(d, true, todayDate));
     }
 
+    if (this.mode === "range") {
+      grid.classList.add("matai-grid--range");
+      let dragStartDate: Date | null = null;
+      let dragOrigin = { x: 0, y: 0 };
+      let dragging = false;
+
+      const cellAt = (x: number, y: number): HTMLElement | null => {
+        const el = document.elementFromPoint(x, y);
+        return el?.closest<HTMLElement>(".matai-day") ?? null;
+      };
+
+      grid.addEventListener("pointerdown", (e) => {
+        const cell = cellAt(e.clientX, e.clientY);
+        if (!cell?.dataset.date) return;
+        e.preventDefault();
+        grid.setPointerCapture(e.pointerId);
+        dragStartDate = new Date(cell.dataset.date + "T00:00:00");
+        dragOrigin = { x: e.clientX, y: e.clientY };
+        dragging = false;
+      });
+
+      grid.addEventListener("pointermove", (e) => {
+        if (!dragStartDate) return;
+        if (!dragging && Math.hypot(e.clientX - dragOrigin.x, e.clientY - dragOrigin.y) > 8) {
+          dragging = true;
+          this.selectCallback?.(dragStartDate);
+        }
+        if (!dragging) return;
+        const cell = cellAt(e.clientX, e.clientY);
+        if (cell?.dataset.date) {
+          this.el.dispatchEvent(new CustomEvent("matai-hover", { detail: new Date(cell.dataset.date + "T00:00:00"), bubbles: true }));
+        }
+      });
+
+      grid.addEventListener("pointerup", (e) => {
+        if (!dragStartDate) return;
+        if (dragging) {
+          const cell = cellAt(e.clientX, e.clientY);
+          if (cell?.dataset.date) {
+            grid.dataset.suppressClick = "1";
+            this.selectCallback?.(new Date(cell.dataset.date + "T00:00:00"));
+            setTimeout(() => { delete grid.dataset.suppressClick; }, 0);
+          }
+        }
+        dragStartDate = null;
+        dragging = false;
+      });
+
+      grid.addEventListener("pointercancel", () => { dragStartDate = null; dragging = false; });
+    }
+
     return grid;
   }
 
@@ -199,7 +250,10 @@ export class Calendar {
 
     this.applyClasses(cell, d, todayDate);
 
-    cell.addEventListener("click", () => this.selectCallback?.(d));
+    cell.addEventListener("click", () => {
+      if (this.gridEl?.dataset.suppressClick === "1") return;
+      this.selectCallback?.(d);
+    });
     cell.addEventListener("mouseenter", () => {
       if (this.mode === "range") this.selectCallback && this.el.dispatchEvent(new CustomEvent("matai-hover", { detail: d, bubbles: true }));
     });

@@ -98,6 +98,7 @@ export class Matai {
   private hintTimer: ReturnType<typeof setInterval> | null = null;
   private hintFadeTimer: ReturnType<typeof setTimeout> | null = null;
   private clearBtn: HTMLButtonElement | null = null;
+  private _vvResizeHandler: (() => void) | null = null;
 
   constructor(el: HTMLElement | string, options: MataiOptions = {}) {
     const target = resolveElement(el);
@@ -279,12 +280,14 @@ export class Matai {
       if (e.key === "Escape") this.hidePopup();
     });
     this.wrapper.addEventListener("focusout", (e: FocusEvent) => {
-      if (this.open && !this.wrapper.contains(e.relatedTarget as Node)) this.hidePopup();
+      const related = e.relatedTarget as Node | null;
+      if (this.open && related && !this.wrapper.contains(related)) this.hidePopup();
     });
     this.outsideHandler = (e: MouseEvent) => {
       if (!this.wrapper.contains(e.target as Node)) this.hidePopup();
     };
     document.addEventListener("mousedown", this.outsideHandler);
+    document.addEventListener("touchstart", this.outsideHandler as EventListener, { passive: true });
   }
 
   private activeLocale(): Locale {
@@ -528,6 +531,10 @@ export class Matai {
     this.popup.style.display = "block";
     this.input.setAttribute("aria-expanded", "true");
     this.clampPopup();
+    if (window.visualViewport) {
+      this._vvResizeHandler = () => this.clampPopup();
+      window.visualViewport.addEventListener("resize", this._vvResizeHandler);
+    }
     if (this.timeColumn && this.timeStart === null) this.timeColumn.scrollToNow();
     this.updateClearBtn();
     this.searchInput.focus({ preventScroll: true });
@@ -547,7 +554,7 @@ export class Matai {
     const wrapperRect = this.wrapper.getBoundingClientRect();
     const margin = 8;
     const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const vh = window.visualViewport?.height ?? window.innerHeight;
 
     if (rect.bottom > vh - margin) {
       this.popup.style.top = "auto";
@@ -568,6 +575,10 @@ export class Matai {
   private hidePopup(): void {
     if (!this.open) return;
     this.open = false;
+    if (window.visualViewport && this._vvResizeHandler) {
+      window.visualViewport.removeEventListener("resize", this._vvResizeHandler);
+      this._vvResizeHandler = null;
+    }
     this.popup.style.display = "none";
     this.input.setAttribute("aria-expanded", "false");
     this.searchInput.value = "";
