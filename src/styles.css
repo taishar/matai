@@ -34,6 +34,7 @@
 .matai-wday { text-align: center; font-size: 11px; color: #999; padding: 2px 0; font-weight: 500; }
 
 .matai-grid { display: grid; grid-template-columns: repeat(7, 36px); gap: 0; }
+.matai-grid--range { touch-action: none; -webkit-tap-highlight-color: transparent; }
 
 /* Each day cell: no background/border of its own — handled by ::before (strip) and ::after (circle) */
 .matai-day {
@@ -150,9 +151,11 @@
   position: relative;
   cursor: pointer;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-.matai-time-col--drag .matai-time-grid { cursor: ns-resize; }
+.matai-time-col--drag .matai-time-grid { cursor: ns-resize; touch-action: none; }
 
 /* Base slot */
 .matai-time-slot {

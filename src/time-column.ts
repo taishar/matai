@@ -57,9 +57,9 @@ export class TimeColumn {
   }
 
   private placeSelection(startMin: number, endMin: number): void {
-    this.selectionEl.style.display = "block";
     this.selectionEl.style.top = `${(startMin / 15) * SLOT_H}px`;
     this.selectionEl.style.height = `${Math.max(1, (endMin - startMin) / 15) * SLOT_H}px`;
+    this.selectionEl.style.display = "block";
   }
 
   private bindEvents(): void {
@@ -72,31 +72,31 @@ export class TimeColumn {
     } else {
       let dragStart: number | null = null;
 
-      const onMove = (e: MouseEvent) => {
+      this.grid.addEventListener("pointermove", (e) => {
         if (dragStart === null) return;
         const cur = this.minutesAt(e.clientY);
         const [lo, hi] = dragStart <= cur ? [dragStart, cur + 15] : [cur, dragStart + 15];
         this.placeSelection(lo, hi);
-      };
+      });
 
-      const onUp = (e: MouseEvent) => {
+      this.grid.addEventListener("pointerup", (e) => {
         if (dragStart === null) return;
         const cur = this.minutesAt(e.clientY);
         const [lo, hi] = dragStart <= cur ? [dragStart, cur + 15] : [cur, dragStart + 15];
         const end = Math.min(hi, 1440);
         this.placeSelection(lo, end);
         dragStart = null;
-        document.removeEventListener("mousemove", onMove);
-        document.removeEventListener("mouseup", onUp);
+        this.grid.releasePointerCapture(e.pointerId);
         this.onSelect?.(lo, end);
-      };
+      });
 
-      this.grid.addEventListener("mousedown", (e) => {
+      this.grid.addEventListener("pointercancel", () => { dragStart = null; });
+
+      this.grid.addEventListener("pointerdown", (e) => {
         e.preventDefault();
+        this.grid.setPointerCapture(e.pointerId);
         dragStart = this.minutesAt(e.clientY);
         this.placeSelection(dragStart, dragStart + 15);
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
       });
     }
   }
