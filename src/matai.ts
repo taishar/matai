@@ -174,9 +174,20 @@ export class Matai {
     this.hintTextEl.textContent = this.hintExamples[0];
     this.hintEl.appendChild(this.hintTextEl);
 
-    const tabBadge = document.createElement("kbd");
+    const tabBadge = document.createElement("button");
+    tabBadge.type = "button";
     tabBadge.className = "matai-hint-tab";
+    tabBadge.setAttribute("aria-label", "Complete hint");
     tabBadge.textContent = this.activeLocale().rtl ? "←" : "→";
+    tabBadge.addEventListener("mousedown", (e) => e.preventDefault());
+    tabBadge.addEventListener("click", () => {
+      if (this.searchInput.value) return;
+      this.searchInput.value = this.hintExamples[this.hintIndex];
+      this.hideHint();
+      this.stopHintCycle();
+      this.searchInput.dispatchEvent(new Event("input"));
+      this.searchInput.focus({ preventScroll: true });
+    });
     this.hintEl.appendChild(tabBadge);
 
     searchWrapper.appendChild(this.hintEl);
