@@ -110,6 +110,57 @@ dp.destroy()           // remove from DOM and clean up listeners
 
 </div>
 
+## Time Input
+
+Time values use the same syntax regardless of language — append them to any date expression.
+
+### Accepted formats
+
+| Format | Example |
+|---|---|
+| 24-hour `HH:MM` | `14:30`, `9:00` |
+| 12-hour `H am/pm` | `2pm`, `9am` |
+| 12-hour with minutes | `9:30am`, `2:30pm` |
+| Hour + `h` | `14h` |
+
+### Datetime — `mode: 'datetime'`
+
+| Input | Result |
+|---|---|
+| `tomorrow 2pm` | Tomorrow at 14:00 |
+| `Jan 15 14:30` | January 15 at 14:30 |
+| `next friday 9am` | Next Friday at 09:00 |
+| `today 15:00` | Today at 15:00 |
+
+<div dir="rtl">
+
+| קלט | תוצאה |
+|---|---|
+| `מחר 14:00` | מחר בשעה 14:00 |
+| `15 ינואר 14:30` | 15 בינואר בשעה 14:30 |
+| `שישי הבא 9:00` | שישי הבא בשעה 09:00 |
+
+</div>
+
+### Event — `mode: 'event'`
+
+Append a `start–end` time range to a date expression.
+
+| Input | Result |
+|---|---|
+| `tomorrow 2pm-4pm` | Tomorrow, 14:00–16:00 |
+| `Jan 15 14:00-16:00` | January 15, 14:00–16:00 |
+| `today 9am-11am` | Today, 09:00–11:00 |
+
+<div dir="rtl">
+
+| קלט | תוצאה |
+|---|---|
+| `מחר 14:00-16:00` | מחר, 14:00–16:00 |
+| `15 ינואר 9:00-11:00` | 15 בינואר, 09:00–11:00 |
+
+</div>
+
 ## Build
 
 Requires [Bun](https://bun.sh).
