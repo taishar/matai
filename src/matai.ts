@@ -126,6 +126,9 @@ export class Matai {
     this.input.type = "text";
     this.input.className = "matai-input";
     this.input.readOnly = true;
+    this.input.setAttribute("aria-haspopup", "dialog");
+    this.input.setAttribute("aria-expanded", "false");
+    this.input.setAttribute("aria-label", this.ariaLabel());
     this.input.placeholder =
       this.mode === "range"    ? `${this.format.toLowerCase()} – ${this.format.toLowerCase()}` :
       this.mode === "datetime" ? this.activeLocale().placeholderDatetime :
@@ -140,6 +143,9 @@ export class Matai {
     this.popup.className = "matai-popup" +
       (this.mode === "range" ? " matai-popup-range" :
        (this.mode === "datetime" || this.mode === "event") ? " matai-popup-datetime" : "");
+    this.popup.setAttribute("role", "dialog");
+    this.popup.setAttribute("aria-modal", "true");
+    this.popup.setAttribute("aria-label", this.ariaLabel());
     this.popup.style.display = "none";
 
     this.searchInput = document.createElement("input");
@@ -169,7 +175,7 @@ export class Matai {
 
     const tabBadge = document.createElement("kbd");
     tabBadge.className = "matai-hint-tab";
-    tabBadge.textContent = "Tab";
+    tabBadge.textContent = this.activeLocale().rtl ? "←" : "→";
     this.hintEl.appendChild(tabBadge);
 
     searchWrapper.appendChild(this.hintEl);
@@ -188,6 +194,7 @@ export class Matai {
       if (this.hintTextEl) this.hintTextEl.textContent = this.hintExamples[0];
       this.showHint();
       this.startHintCycle();
+      this.searchInput.focus({ preventScroll: true });
       this.updateClearBtn();
     });
 
@@ -221,6 +228,7 @@ export class Matai {
       const tcMode = this.mode === "datetime" ? "single" : "range";
       this.timeColumn = new TimeColumn(tcMode);
       this.timeColumn.onSelect = (start, end) => this.handleTimeSelect(start, end);
+      this.timeColumn.getElement().setAttribute("aria-label", "Select time");
 
       const calTimeWrapper = document.createElement("div");
       calTimeWrapper.className = "matai-cal-time-wrapper";
@@ -239,6 +247,13 @@ export class Matai {
       if (this.open) this.hidePopup();
       else this.showPopup();
     });
+    this.input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (this.open) this.hidePopup();
+        else this.showPopup();
+      }
+    });
     this.searchInput.addEventListener("input", () => {
       if (this.searchInput.value) {
         this.hideHint();
@@ -251,7 +266,8 @@ export class Matai {
     });
     this.searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Escape" || e.key === "Enter") { this.hidePopup(); return; }
-      if (e.key === "Tab" && !this.searchInput.value) {
+      const acceptKey = this.activeLocale().rtl ? "ArrowLeft" : "ArrowRight";
+      if (e.key === acceptKey && !this.searchInput.value) {
         e.preventDefault();
         this.searchInput.value = this.hintExamples[this.hintIndex];
         this.hideHint();
@@ -259,6 +275,12 @@ export class Matai {
       }
     });
 
+    this.popup.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") this.hidePopup();
+    });
+    this.wrapper.addEventListener("focusout", (e: FocusEvent) => {
+      if (this.open && !this.wrapper.contains(e.relatedTarget as Node)) this.hidePopup();
+    });
     this.outsideHandler = (e: MouseEvent) => {
       if (!this.wrapper.contains(e.target as Node)) this.hidePopup();
     };
@@ -267,6 +289,13 @@ export class Matai {
 
   private activeLocale(): Locale {
     return LOCALES[this.activeLang];
+  }
+
+  private ariaLabel(): string {
+    return this.mode === "datetime" ? "Date and time picker"
+      : this.mode === "range"      ? "Date range picker"
+      : this.mode === "event"      ? "Event picker"
+      : "Date picker";
   }
 
   private showHint(): void {
@@ -497,6 +526,7 @@ export class Matai {
     if (this.open) return;
     this.open = true;
     this.popup.style.display = "block";
+    this.input.setAttribute("aria-expanded", "true");
     this.clampPopup();
     if (this.timeColumn && this.timeStart === null) this.timeColumn.scrollToNow();
     this.updateClearBtn();
@@ -539,11 +569,13 @@ export class Matai {
     if (!this.open) return;
     this.open = false;
     this.popup.style.display = "none";
+    this.input.setAttribute("aria-expanded", "false");
     this.searchInput.value = "";
     this.stopHintCycle();
     this.hintIndex = 0;
     if (this.hintTextEl) this.hintTextEl.textContent = this.hintExamples[0];
     this.showHint();
+    this.input.focus({ preventScroll: true });
   }
 
   private startHintCycle(): void {

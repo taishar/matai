@@ -98,4 +98,6 @@ export const he: Locale = {
   },
   weekendStart: 5,
   requireYearForMonthRange: false,
+  prevMonth: "החודש הקודם",
+  nextMonth: "החודש הבא",
 };

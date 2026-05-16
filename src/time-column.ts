@@ -16,6 +16,7 @@ export class TimeColumn {
     this.mode = mode;
     this.el = document.createElement("div");
     this.el.className = "matai-time-col" + (mode === "range" ? " matai-time-col--drag" : "");
+    this.el.setAttribute("tabindex", "-1");
     this.build();
   }
 

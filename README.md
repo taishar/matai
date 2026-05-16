@@ -8,7 +8,7 @@ A lightweight, zero-dependency date picker with natural language input. Supports
 
 - **Natural language input** — type `tomorrow`, `next Monday`, `in 3 weeks`, `last 30 days`, or `מחר`, `בעוד 3 ימים`
 - **Visual calendar** — click to pick, or type and the calendar follows; the search field always reflects what's selected
-- **Hint cycling** — the search field cycles through example phrases; press `Tab` to autocomplete
+- **Hint cycling** — the search field cycles through example phrases; press `→` (or `←` in RTL) to autocomplete
 - **Date range** — two-calendar range picker with hover preview and duration badge
 - **Datetime & event modes** — date + time, or date + time range
 - **Auto language detection** — pass an array of languages and Matai detects which one you're typing in
@@ -160,6 +160,33 @@ Append a `start–end` time range to a date expression.
 | `15 ינואר 9:00-11:00` | 15 בינואר, 09:00–11:00 |
 
 </div>
+
+## Accessibility
+
+Matai is designed around a **text-first** model: the search input is the primary keyboard and screen reader path. The visual calendar is a secondary affordance and is intentionally kept out of the tab order.
+
+### Keyboard interaction
+
+| Key | Action |
+|---|---|
+| `Enter` / `Space` | Open or close the picker |
+| `Escape` | Close the picker (works from anywhere inside the popup) |
+| `Tab` | Move focus between the search field and the clear button; Tab past the last element closes the popup |
+| `→` / `←` (RTL) | Accept the current hint suggestion |
+| Type any date expression | Parse and select a date without touching the mouse |
+
+### ARIA
+
+- The trigger input has `aria-haspopup="dialog"` and `aria-expanded` (toggled on open/close).
+- The popup has `role="dialog"` and `aria-modal="true"`.
+- Calendar navigation buttons have `aria-label` ("Previous month" / "Next month", localised).
+- The month title has `aria-live="polite"` so screen readers announce month changes.
+- Each day cell has a descriptive `aria-label` (e.g. "Thursday, May 16, 2026") and `aria-pressed` reflecting selection state.
+- Weekday column headers use `<abbr>` with the full day name as the title.
+
+### Screen reader notes
+
+Because the calendar grid is not keyboard-navigable, screen reader users interact with the picker by typing in the search field — the same way sighted keyboard users do. The calendar remains reachable via virtual/browse cursor for users who prefer it.
 
 ## Build
 
