@@ -133,3 +133,81 @@
   color: var(--matai-color, #1a73e8);
   font-weight: 600;
 }
+
+.matai-cal-time-wrapper { display: flex; align-items: flex-start; }
+.matai-popup-datetime { min-width: auto; }
+
+.matai-time-col {
+  height: 252px;
+  width: 72px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-left: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.matai-time-grid {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.matai-time-col--drag .matai-time-grid { cursor: ns-resize; }
+
+/* Base slot */
+.matai-time-slot {
+  height: 28px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Full hour — stronger border + hour label */
+.matai-time-slot[data-hour] {
+  border-top: 1px solid #c8c8c8;
+}
+
+/* Half hour — dashed */
+.matai-time-slot[data-half] {
+  border-top: 1px dashed #e4e4e4;
+}
+
+/* Quarter hours — barely visible */
+.matai-time-slot:not([data-hour]):not([data-half]) {
+  border-top: 1px solid #f2f2f2;
+}
+
+/* Time label inside every slot */
+.matai-time-slot-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 6px;
+  font-size: 11px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  color: #ccc;
+  font-weight: 400;
+}
+
+/* :00 slots — bold, stronger color */
+.matai-time-slot[data-hour] .matai-time-slot-label {
+  color: #888;
+  font-weight: 600;
+}
+
+/* Selection overlay */
+.matai-time-selection {
+  position: absolute;
+  left: 0; right: 0;
+  background: color-mix(in srgb, var(--matai-color, #1a73e8) 18%, transparent);
+  border-left: 3px solid var(--matai-color, #1a73e8);
+  border-radius: 0 3px 3px 0;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+@media (max-width: 540px) {
+  .matai-cal-time-wrapper { flex-direction: column; }
+  .matai-time-col { width: 100%; height: 180px; border-left: none; border-top: 1px solid #f0f0f0; }
+}

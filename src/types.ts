@@ -45,14 +45,18 @@ export interface Locale {
   monthsShort: string[];
   placeholder: string;
   placeholderRange: string;
+  placeholderDatetime: string;
+  placeholderEvent: string;
   examples: string[];
   examplesRange: string[];
+  examplesDatetime: string[];
+  examplesEvent: string[];
   tokens: LocaleTokens;
   numericOrder: "dmy" | "mdy";
 }
 
 export type Lang = "en" | "he";
-export type Mode = "single" | "range";
+export type Mode = "date" | "datetime" | "range" | "event";
 export type DateValue = Date | [Date, Date] | null;
 
 export interface MataiOptions {

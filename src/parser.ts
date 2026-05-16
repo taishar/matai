@@ -32,6 +32,40 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function parseTime(s: string): number | null {
+  const lower = s.toLowerCase().trim();
+  let m = lower.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (m) { const h = +m[1], min = +m[2]; if (h <= 23 && min <= 59) return h * 60 + min; }
+  m = lower.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/);
+  if (m) {
+    let h = +m[1]; const min = m[2] ? +m[2] : 0;
+    if (m[3] === "am") { if (h === 12) h = 0; } else { if (h !== 12) h += 12; }
+    if (h <= 23 && min <= 59) return h * 60 + min;
+  }
+  m = lower.match(/^(\d{1,2})h$/);
+  if (m) { const h = +m[1]; if (h <= 23) return h * 60; }
+  return null;
+}
+
+function stripTime(s: string): { date: string; time: number | null } {
+  const parts = s.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    const t = parseTime(parts[parts.length - 1]);
+    if (t !== null) return { date: parts.slice(0, -1).join(" "), time: t };
+  }
+  return { date: s, time: null };
+}
+
+function stripTimeRange(s: string): { date: string; start: number | null; end: number | null } {
+  const m = s.match(/^(.*?)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*[-–]\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)$/i);
+  if (m) {
+    const start = parseTime(m[2].trim());
+    const end = parseTime(m[3].trim());
+    if (start !== null && end !== null) return { date: m[1].trim() || "today", start, end };
+  }
+  return { date: s, start: null, end: null };
+}
+
 function startOfDay(d: Date): Date {
   const r = new Date(d);
   r.setHours(0, 0, 0, 0);
@@ -514,6 +548,29 @@ export function parse(input: string, locale: Locale, mode: Mode): DateValue {
         if (d0c) return d0c <= d1 ? [d0c, d1] : [d1, d0c];
       }
     }
+    return null;
+  }
+
+  if (mode === "datetime") {
+    const { date, time } = stripTime(trimmed);
+    const d = parseSingle(date, locale);
+    if (d && time !== null) {
+      d.setHours(Math.floor(time / 60), time % 60, 0, 0);
+      return d;
+    }
+    return parseSingle(trimmed, locale);
+  }
+
+  if (mode === "event") {
+    const { date, start, end } = stripTimeRange(trimmed);
+    const d = parseSingle(date, locale);
+    if (d && start !== null && end !== null) {
+      const [lo, hi] = start <= end ? [start, end] : [end, start];
+      const sd = new Date(d); sd.setHours(Math.floor(lo / 60), lo % 60, 0, 0);
+      const ed = new Date(d); ed.setHours(Math.floor(hi / 60), hi % 60, 0, 0);
+      return [sd, ed];
+    }
+    return null;
   }
 
   return parseSingle(trimmed, locale);

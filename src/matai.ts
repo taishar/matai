@@ -3,6 +3,7 @@ import { en } from "./i18n/en";
 import { he } from "./i18n/he";
 import { parse, parseWithAutoDetect } from "./parser";
 import { Calendar } from "./calendar";
+import { TimeColumn, formatMinutes } from "./time-column";
 
 const LOCALES: Record<Lang, Locale> = { en, he };
 
@@ -11,7 +12,9 @@ function formatDate(d: Date, fmt: string): string {
   return fmt
     .replace("YYYY", String(d.getFullYear()))
     .replace("MM", pad(d.getMonth() + 1))
-    .replace("DD", pad(d.getDate()));
+    .replace("DD", pad(d.getDate()))
+    .replace("HH", pad(d.getHours()))
+    .replace("mm", pad(d.getMinutes()));
 }
 
 function resolveElement(el: HTMLElement | string): HTMLElement {
@@ -64,6 +67,10 @@ export class Matai {
   private value: DateValue = null;
   private rangeStart: Date | null = null;
   private rangeStep: 0 | 1 = 0;
+  private timeColumn: TimeColumn | null = null;
+  private pendingDate: Date | null = null;
+  private timeStart: number | null = null;
+  private timeEnd: number | null = null;
 
   private wrapper: HTMLElement;
   private input: HTMLInputElement;
@@ -98,7 +105,7 @@ export class Matai {
       this.activeLang = options.lang;
       this.autoDetectLocales = [];
     }
-    this.mode = options.mode ?? "single";
+    this.mode = options.mode ?? "date";
     this.format = options.format ?? "DD/MM/YYYY";
     this.onChange = options.onChange ?? null;
 
@@ -110,16 +117,20 @@ export class Matai {
     this.input.type = "text";
     this.input.className = "matai-input";
     this.input.readOnly = true;
-    this.input.placeholder = this.mode === "range"
-      ? `${this.format.toLowerCase()} – ${this.format.toLowerCase()}`
-      : this.format.toLowerCase();
+    this.input.placeholder =
+      this.mode === "range"    ? `${this.format.toLowerCase()} – ${this.format.toLowerCase()}` :
+      this.mode === "datetime" ? this.activeLocale().placeholderDatetime :
+      this.mode === "event"    ? this.activeLocale().placeholderEvent :
+      this.format.toLowerCase();
     if (this.activeLocale().rtl) {
       this.wrapper.setAttribute("dir", "rtl");
       this.input.setAttribute("dir", "rtl");
     }
 
     this.popup = document.createElement("div");
-    this.popup.className = "matai-popup" + (this.mode === "range" ? " matai-popup-range" : "");
+    this.popup.className = "matai-popup" +
+      (this.mode === "range" ? " matai-popup-range" :
+       (this.mode === "datetime" || this.mode === "event") ? " matai-popup-datetime" : "");
     this.popup.style.display = "none";
 
     this.searchInput = document.createElement("input");
@@ -129,7 +140,11 @@ export class Matai {
     if (this.activeLocale().rtl) this.searchInput.setAttribute("dir", "rtl");
 
     const locale = this.activeLocale();
-    this.hintExamples = this.mode === "range" ? locale.examplesRange : locale.examples;
+    this.hintExamples =
+      this.mode === "range"    ? locale.examplesRange :
+      this.mode === "datetime" ? locale.examplesDatetime :
+      this.mode === "event"    ? locale.examplesEvent :
+      locale.examples;
 
     const searchWrapper = document.createElement("div");
     searchWrapper.className = "matai-search-wrapper";
@@ -195,6 +210,16 @@ export class Matai {
       this.badgeEl.style.display = "none";
       this.badgeEl.appendChild(document.createElement("span"));
       this.popup.appendChild(this.badgeEl);
+    } else if (this.mode === "datetime" || this.mode === "event") {
+      const tcMode = this.mode === "datetime" ? "single" : "range";
+      this.timeColumn = new TimeColumn(tcMode);
+      this.timeColumn.onSelect = (start, end) => this.handleTimeSelect(start, end);
+
+      const calTimeWrapper = document.createElement("div");
+      calTimeWrapper.className = "matai-cal-time-wrapper";
+      calTimeWrapper.appendChild(this.calStart.getElement());
+      calTimeWrapper.appendChild(this.timeColumn.getElement());
+      this.popup.appendChild(calTimeWrapper);
     } else {
       this.popup.appendChild(this.calStart.getElement());
       this.wireHover(this.calStart);
@@ -296,12 +321,31 @@ export class Matai {
         this.value = parsed;
         this.rangeStep = 0;
         this.rangeStart = null;
-        this.setCalendarsSelected(parsed);
         if (Array.isArray(parsed)) {
-          this.updateBadge(parsed[0], parsed[1]);
-          this.input.value = `${formatDate(parsed[0], this.format)} - ${formatDate(parsed[1], this.format)}`;
+          if (this.mode === "event") {
+            const [s, e] = parsed;
+            this.pendingDate = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+            this.timeStart = s.getHours() * 60 + s.getMinutes();
+            this.timeEnd = e.getHours() * 60 + e.getMinutes();
+            this.setCalendarsSelected(this.pendingDate);
+            this.timeColumn?.setSelected(this.timeStart, this.timeEnd);
+            this.input.value = `${formatDate(this.pendingDate, this.format)} ${formatMinutes(this.timeStart)} – ${formatMinutes(this.timeEnd)}`;
+          } else {
+            this.setCalendarsSelected(parsed);
+            this.updateBadge(parsed[0], parsed[1]);
+            this.input.value = `${formatDate(parsed[0], this.format)} - ${formatDate(parsed[1], this.format)}`;
+          }
         } else {
-          this.input.value = formatDate(parsed, this.format);
+          if (this.mode === "datetime") {
+            this.pendingDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+            this.timeStart = parsed.getHours() * 60 + parsed.getMinutes();
+            this.setCalendarsSelected(parsed);
+            this.timeColumn?.setSelected(this.timeStart);
+            this.input.value = `${formatDate(parsed, this.format)} ${formatMinutes(this.timeStart)}`;
+          } else {
+            this.setCalendarsSelected(parsed);
+            this.input.value = formatDate(parsed, this.format);
+          }
         }
         this.onChange?.(this.value);
         this.updateClearBtn();
@@ -310,18 +354,27 @@ export class Matai {
   }
 
   private handleSelect(d: Date): void {
-    if (this.mode === "single") {
+    if (this.mode === "date") {
       this.value = d;
       this.input.value = formatDate(d, this.format);
       this.setCalendarsSelected(d);
       this.onChange?.(this.value);
       this.updateClearBtn();
       this.hidePopup();
+    } else if (this.mode === "datetime") {
+      this.pendingDate = d;
+      this.calStart.setSelectedNoJump(d);
+      if (this.timeStart !== null) this.commitDatetime();
+    } else if (this.mode === "event") {
+      this.pendingDate = d;
+      this.calStart.setSelectedNoJump(d);
+      this.timeColumn?.reset();
+      this.timeStart = null;
+      this.timeEnd = null;
     } else {
       if (this.rangeStep === 0) {
         this.rangeStart = d;
         this.rangeStep = 1;
-        // Show just the start, no end yet
         this.setCalendarsSelectedNoJump([d, undefined as unknown as Date]);
       } else {
         const start = this.rangeStart!;
@@ -339,6 +392,37 @@ export class Matai {
         this.hidePopup();
       }
     }
+  }
+
+  private handleTimeSelect(start: number, end?: number): void {
+    this.timeStart = start;
+    this.timeEnd = end ?? null;
+    if (this.mode === "datetime" && this.pendingDate !== null) this.commitDatetime();
+    else if (this.mode === "event" && this.pendingDate !== null && this.timeEnd !== null) this.commitEvent();
+  }
+
+  private commitDatetime(): void {
+    const d = new Date(this.pendingDate!);
+    d.setHours(Math.floor(this.timeStart! / 60), this.timeStart! % 60, 0, 0);
+    this.value = d;
+    this.input.value = `${formatDate(d, this.format)} ${formatMinutes(this.timeStart!)}`;
+    this.setCalendarsSelected(d);
+    this.onChange?.(this.value);
+    this.updateClearBtn();
+  }
+
+  private commitEvent(): void {
+    const date = this.pendingDate!;
+    const [lo, hi] = this.timeStart! <= this.timeEnd!
+      ? [this.timeStart!, this.timeEnd!]
+      : [this.timeEnd!, this.timeStart!];
+    const startDate = new Date(date); startDate.setHours(Math.floor(lo / 60), lo % 60, 0, 0);
+    const endDate = new Date(date);   endDate.setHours(Math.floor(hi / 60), hi % 60, 0, 0);
+    this.value = [startDate, endDate];
+    this.input.value = `${formatDate(date, this.format)} ${formatMinutes(lo)} – ${formatMinutes(hi)}`;
+    this.calStart.setSelectedNoJump(date);
+    this.onChange?.(this.value);
+    this.updateClearBtn();
   }
 
   private setCalendarsSelected(value: DateValue): void {
@@ -448,14 +532,32 @@ export class Matai {
 
   setValue(date: Date | [Date, Date]): void {
     this.value = date;
-    if (date instanceof Date) {
-      this.input.value = formatDate(date, this.format);
-    } else {
-      this.input.value = `${formatDate(date[0], this.format)} - ${formatDate(date[1], this.format)}`;
-    }
-    this.setCalendarsSelected(date);
     this.rangeStep = 0;
     this.rangeStart = null;
+    if (date instanceof Date) {
+      if (this.mode === "datetime") {
+        this.pendingDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        this.timeStart = date.getHours() * 60 + date.getMinutes();
+        this.input.value = `${formatDate(date, this.format)} ${formatMinutes(this.timeStart)}`;
+        this.timeColumn?.setSelected(this.timeStart);
+      } else {
+        this.input.value = formatDate(date, this.format);
+      }
+      this.setCalendarsSelected(date);
+    } else {
+      const [s, e] = date;
+      if (this.mode === "event") {
+        this.pendingDate = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+        this.timeStart = s.getHours() * 60 + s.getMinutes();
+        this.timeEnd = e.getHours() * 60 + e.getMinutes();
+        this.input.value = `${formatDate(this.pendingDate, this.format)} ${formatMinutes(this.timeStart)} – ${formatMinutes(this.timeEnd)}`;
+        this.timeColumn?.setSelected(this.timeStart, this.timeEnd);
+        this.setCalendarsSelected(this.pendingDate);
+      } else {
+        this.input.value = `${formatDate(s, this.format)} - ${formatDate(e, this.format)}`;
+        this.setCalendarsSelected(date);
+      }
+    }
   }
 
   clear(): void {
@@ -465,6 +567,10 @@ export class Matai {
     this.updateBadge(null, null);
     this.rangeStep = 0;
     this.rangeStart = null;
+    this.pendingDate = null;
+    this.timeStart = null;
+    this.timeEnd = null;
+    this.timeColumn?.reset();
   }
 
   destroy(): void {

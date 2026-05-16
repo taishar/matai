@@ -10,8 +10,12 @@ export const he: Locale = {
   monthsShort: ["ינו׳", "פבר׳", "מרץ", "אפר׳", "מאי", "יוני", "יולי", "אוג׳", "ספט׳", "אוק׳", "נוב׳", "דצמ׳"],
   placeholder: "בחר תאריך…",
   placeholderRange: "בחר טווח תאריכים…",
+  placeholderDatetime: "בחר תאריך ושעה…",
+  placeholderEvent: "בחר תאריך וטווח שעות…",
   examples: ["מחר", "שני הבא", "בעוד 3 ימים", "15 ינואר", "אתמול"],
   examplesRange: ["השבוע", "החודש", "ינואר", "30 ימים אחרונים", "שבוע הבא"],
+  examplesDatetime: ["מחר 14:00", "15 ינואר 14:30", "שישי הבא 9:00"],
+  examplesEvent: ["מחר 14:00-16:00", "15 ינואר 9:00-11:00"],
   numericOrder: "dmy",
   tokens: {
     today: ["היום"],

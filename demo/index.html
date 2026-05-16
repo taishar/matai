@@ -146,6 +146,14 @@
             .card-range {
                 background: linear-gradient(90deg, #f64f59, #ff9a3c) top/100% 3px no-repeat, #fff;
             }
+            .card-datetime {
+                background: linear-gradient(90deg, #0ea5e9, #38bdf8) top/100% 3px no-repeat, #fff;
+            }
+            .card-datetime .card-icon { background: linear-gradient(135deg, #e0f2fe, #bae6fd); color: #0ea5e9; }
+            .card-event {
+                background: linear-gradient(90deg, #10b981, #34d399) top/100% 3px no-repeat, #fff;
+            }
+            .card-event .card-icon { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #10b981; }
 
             .card-icon {
                 width: 42px;
@@ -271,6 +279,45 @@
                     <div class="card-output" id="out-range">No range selected yet</div>
                 </div>
 
+                <div class="demo-card card-datetime">
+                    <div class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                            <circle cx="12" cy="16" r="2"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">Date &amp; Time</div>
+                    <div class="card-desc">
+                        Type <strong>tomorrow 2pm</strong>, <strong>Jan 15 14:30</strong>,
+                        or pick a date then click a time slot.
+                    </div>
+                    <input id="datetime" />
+                    <div class="card-output" id="out-datetime">No datetime selected yet</div>
+                </div>
+
+                <div class="demo-card card-event">
+                    <div class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                            <line x1="9" y1="15" x2="15" y2="15"/>
+                            <line x1="9" y1="18" x2="13" y2="18"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">Meeting / Event</div>
+                    <div class="card-desc">
+                        Type <strong>tomorrow 2pm-4pm</strong> or pick a date then
+                        click-drag a time range.
+                    </div>
+                    <input id="event" />
+                    <div class="card-output" id="out-event">No event selected yet</div>
+                </div>
+
             </div>
         </section>
 
@@ -294,18 +341,29 @@
             function setOut(id, v) {
                 const el = document.getElementById("out-" + id);
                 if (!v) {
-                    el.textContent = id === "single" ? "No date selected yet" : "No range selected yet";
+                    el.textContent = "No selection yet";
                     el.classList.remove("active");
                     return;
                 }
-                const fmt = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                el.textContent = Array.isArray(v) ? fmt(v[0]) + " → " + fmt(v[1]) : fmt(v);
+                const fmtDate = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                const fmtTime = d => d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+                if (Array.isArray(v)) {
+                    if (id === "event") {
+                        el.textContent = fmtDate(v[0]) + " · " + fmtTime(v[0]) + " – " + fmtTime(v[1]);
+                    } else {
+                        el.textContent = fmtDate(v[0]) + " → " + fmtDate(v[1]);
+                    }
+                } else {
+                    el.textContent = id === "datetime"
+                        ? fmtDate(v) + " · " + fmtTime(v)
+                        : fmtDate(v);
+                }
                 el.classList.add("active");
             }
 
             const p1 = new Matai("#single", {
                 lang: ["he", "en"],
-                mode: "single",
+                mode: "date",
                 color: "#6c63ff",
                 onChange: v => setOut("single", v),
             });
@@ -315,6 +373,20 @@
                 mode: "range",
                 color: "#f64f59",
                 onChange: v => setOut("range", v),
+            });
+
+            const p3 = new Matai("#datetime", {
+                lang: ["en", "he"],
+                mode: "datetime",
+                color: "#0ea5e9",
+                onChange: v => setOut("datetime", v),
+            });
+
+            const p4 = new Matai("#event", {
+                lang: ["en", "he"],
+                mode: "event",
+                color: "#10b981",
+                onChange: v => setOut("event", v),
             });
         </script>
     </body>
