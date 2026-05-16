@@ -77,6 +77,7 @@ export class Matai {
   private outsideHandler: (e: MouseEvent) => void;
 
   private hintEl: HTMLElement | null = null;
+  private hintTextEl: HTMLElement | null = null;
   private hintExamples: string[] = [];
   private hintIndex = 0;
   private hintTimer: ReturnType<typeof setInterval> | null = null;
@@ -135,8 +136,17 @@ export class Matai {
 
     this.hintEl = document.createElement("div");
     this.hintEl.className = "matai-hint";
-    this.hintEl.textContent = this.hintExamples[0];
     if (locale.rtl) this.hintEl.setAttribute("dir", "rtl");
+
+    this.hintTextEl = document.createElement("span");
+    this.hintTextEl.textContent = this.hintExamples[0];
+    this.hintEl.appendChild(this.hintTextEl);
+
+    const tabBadge = document.createElement("kbd");
+    tabBadge.className = "matai-hint-tab";
+    tabBadge.textContent = "Tab";
+    this.hintEl.appendChild(tabBadge);
+
     searchWrapper.appendChild(this.hintEl);
 
     this.popup.appendChild(searchWrapper);
@@ -378,8 +388,8 @@ export class Matai {
     this.searchInput.value = "";
     this.stopHintCycle();
     this.hintIndex = 0;
-    if (this.hintEl) {
-      this.hintEl.textContent = this.hintExamples[0];
+    if (this.hintEl && this.hintTextEl) {
+      this.hintTextEl.textContent = this.hintExamples[0];
       this.hintEl.style.opacity = "1";
     }
   }
@@ -398,7 +408,7 @@ export class Matai {
     this.hintEl.classList.add("matai-hint-fade");
     setTimeout(() => {
       this.hintIndex = (this.hintIndex + 1) % this.hintExamples.length;
-      this.hintEl!.textContent = this.hintExamples[this.hintIndex];
+      this.hintTextEl!.textContent = this.hintExamples[this.hintIndex];
       this.hintEl!.classList.remove("matai-hint-fade");
     }, 350);
   }

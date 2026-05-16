@@ -3,92 +3,319 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Matai Demo</title>
+        <title>Matai — Natural Language Date Picker</title>
         <script src="../dist/matai.min.js"></script>
         <style>
+            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
             body {
-                font-family: system-ui, sans-serif;
-                padding: 2rem;
-                max-width: 800px;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: #f7f6ff;
+                color: #111;
+            }
+
+            /* ── HERO ─────────────────────────────── */
+            .hero {
+                background: linear-gradient(135deg, #6c63ff 0%, #f64f59 65%, #ff9a3c 100%);
+                padding: 96px 24px 88px;
+                text-align: center;
+                position: relative;
+            }
+            .hero::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background:
+                    radial-gradient(ellipse 60% 70% at 18% 55%, rgba(255,255,255,0.09) 0%, transparent 100%),
+                    radial-gradient(ellipse 45% 45% at 82% 18%, rgba(255,255,255,0.06) 0%, transparent 100%);
+                pointer-events: none;
+            }
+
+            .hero-eyebrow {
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: rgba(255,255,255,0.65);
+                margin-bottom: 20px;
+            }
+
+            .hero-title {
+                font-size: clamp(2.6rem, 6vw, 4.8rem);
+                font-weight: 800;
+                color: #fff;
+                line-height: 1.08;
+                letter-spacing: -0.03em;
+                margin-bottom: 18px;
+                position: relative;
+            }
+
+            .hero-sub {
+                font-size: clamp(1rem, 2vw, 1.15rem);
+                color: rgba(255,255,255,0.82);
+                max-width: 460px;
+                margin: 0 auto 48px;
+                line-height: 1.65;
+                position: relative;
+            }
+
+            .example-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                background: rgba(255,255,255,0.15);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255,255,255,0.28);
+                border-radius: 100px;
+                padding: 12px 22px;
+                position: relative;
+            }
+
+            .pill-label {
+                font-size: 0.875rem;
+                color: rgba(255,255,255,0.6);
+                font-weight: 500;
+                white-space: nowrap;
+            }
+
+            .pill-divider {
+                width: 1px;
+                height: 16px;
+                background: rgba(255,255,255,0.25);
+            }
+
+            .pill-word {
+                font-size: 1rem;
+                font-weight: 700;
+                color: #fff;
+                min-width: 110px;
+                transition: opacity 0.35s ease;
+            }
+
+            .pill-word.fading { opacity: 0; }
+
+            /* ── DEMOS ────────────────────────────── */
+            .demos {
+                padding: 80px 24px 96px;
+                max-width: 880px;
                 margin: 0 auto;
             }
-            .demo-section {
-                margin-bottom: 3rem;
+
+            .section-eyebrow {
+                text-align: center;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: #a78bfa;
+                margin-bottom: 12px;
             }
-            h2 {
-                margin-bottom: 0.5rem;
+
+            .section-title {
+                text-align: center;
+                font-size: clamp(1.5rem, 3vw, 2.1rem);
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                margin-bottom: 10px;
+                color: #111;
             }
-            .demo-input {
-                margin-bottom: 0.5rem;
+
+            .section-sub {
+                text-align: center;
+                color: #6b7280;
+                font-size: 0.95rem;
+                margin-bottom: 52px;
+                line-height: 1.65;
             }
-            .output {
-                font-family: monospace;
-                font-size: 0.85rem;
-                color: #555;
-                min-height: 1.2em;
+
+            .demo-cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 24px;
             }
-            button.clear-btn {
-                margin-top: 0.4rem;
+
+            .demo-card {
+                border-radius: 24px;
+                padding: 32px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 12px 40px rgba(0,0,0,0.07);
+                position: relative;
+            }
+            .card-single {
+                background: linear-gradient(90deg, #6c63ff, #a78bfa) top/100% 3px no-repeat, #fff;
+            }
+            .card-range {
+                background: linear-gradient(90deg, #f64f59, #ff9a3c) top/100% 3px no-repeat, #fff;
+            }
+
+            .card-icon {
+                width: 42px;
+                height: 42px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 18px;
+            }
+            .card-single .card-icon { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #6c63ff; }
+            .card-range  .card-icon { background: linear-gradient(135deg, #ffe4e6, #fecdd3); color: #f64f59; }
+
+            .card-title {
+                font-size: 1.1rem;
+                font-weight: 700;
+                margin-bottom: 6px;
+                color: #111;
+            }
+
+            .card-desc {
+                font-size: 0.875rem;
+                color: #6b7280;
+                line-height: 1.65;
+                margin-bottom: 22px;
+            }
+
+            /* stretch Matai input to fill card */
+            .demo-card .matai-wrapper {
+                display: block;
+                width: 100%;
+            }
+            .demo-card .matai-input {
+                width: 100%;
+            }
+
+            .card-output {
+                margin-top: 14px;
+                font-size: 0.82rem;
+                color: #bbb;
+                min-height: 1.4em;
+                font-variant-numeric: tabular-nums;
+                transition: color 0.2s;
+            }
+            .card-output.active {
+                color: #374151;
+                font-weight: 600;
+            }
+
+            /* ── FOOTER ───────────────────────────── */
+            .footer {
+                text-align: center;
+                padding: 32px 24px;
                 font-size: 0.8rem;
-                cursor: pointer;
+                color: #c4b5fd;
+                border-top: 1px solid #ede9fe;
+                background: #fff;
             }
         </style>
     </head>
     <body>
-        <h1>Matai מתי — Date Picker Demo</h1>
 
-        <div class="demo-section">
-            <h2>Single Date</h2>
-            <div class="demo-input"><input id="single" /></div>
-            <div class="output" id="out-single"></div>
-            <button class="clear-btn" id="clear-single">Clear</button>
-        </div>
+        <!-- HERO -->
+        <section class="hero">
+            <div class="hero-eyebrow">matai &nbsp; מתי</div>
+            <h1 class="hero-title">Pick dates the<br>way you think.</h1>
+            <p class="hero-sub">
+                No clicking through calendars.<br>
+                Just type what you mean — in English or Hebrew.
+            </p>
+            <div class="example-pill">
+                <span class="pill-label">Try typing</span>
+                <span class="pill-divider"></span>
+                <span class="pill-word" id="ex-word">tomorrow</span>
+            </div>
+        </section>
 
-        <div class="demo-section">
-            <h2>Date Range</h2>
-            <div class="demo-input"><input id="range" /></div>
-            <div class="output" id="out-range"></div>
-            <button class="clear-btn" id="clear-range">Clear</button>
-        </div>
+        <!-- DEMOS -->
+        <section class="demos">
+            <p class="section-eyebrow">Live demo</p>
+            <h2 class="section-title">See it in action</h2>
+            <p class="section-sub">
+                Click either field and start typing a date in plain language.<br>
+                Press <kbd style="font: inherit; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem;">Tab</kbd> to use the hint.
+            </p>
+
+            <div class="demo-cards">
+
+                <div class="demo-card card-single">
+                    <div class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">Single Date</div>
+                    <div class="card-desc">
+                        Type <strong>tomorrow</strong>, <strong>Jan 15</strong>, <strong>next friday</strong>,
+                        or any natural date expression.
+                    </div>
+                    <input id="single" />
+                    <div class="card-output" id="out-single">No date selected yet</div>
+                </div>
+
+                <div class="demo-card card-range">
+                    <div class="card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                            <line x1="8" y1="15" x2="16" y2="15"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">Date Range</div>
+                    <div class="card-desc">
+                        Type <strong>next week</strong>, <strong>last 30 days</strong>, <strong>Q1</strong>,
+                        or <strong>from Jan 1 to Jan 31</strong>.
+                    </div>
+                    <input id="range" />
+                    <div class="card-output" id="out-range">No range selected yet</div>
+                </div>
+
+            </div>
+        </section>
+
+        <footer class="footer">matai &nbsp; מתי &mdash; natural language date picker</footer>
 
         <script>
-            function show(id, dp) {
-                const out = document.getElementById("out-" + id);
-                function update(v) {
-                    if (!v) {
-                        out.textContent = "null";
-                        return;
-                    }
-                    if (Array.isArray(v)) {
-                        out.textContent = v
-                            .map((d) => d.toDateString())
-                            .join(" → ");
-                    } else {
-                        out.textContent = v.toDateString();
-                    }
+            // Animated example word in hero
+            const phrases = ["tomorrow", "next week", "last 30 days", "Q1", "next friday", "this month", "השבוע הבא"];
+            const exEl = document.getElementById("ex-word");
+            let exIdx = 0;
+            setInterval(() => {
+                exEl.classList.add("fading");
+                setTimeout(() => {
+                    exIdx = (exIdx + 1) % phrases.length;
+                    exEl.textContent = phrases[exIdx];
+                    exEl.classList.remove("fading");
+                }, 350);
+            }, 2400);
+
+            // Output formatter
+            function setOut(id, v) {
+                const el = document.getElementById("out-" + id);
+                if (!v) {
+                    el.textContent = id === "single" ? "No date selected yet" : "No range selected yet";
+                    el.classList.remove("active");
+                    return;
                 }
-                document
-                    .getElementById("clear-" + id)
-                    .addEventListener("click", () => {
-                        dp.clear();
-                        update(null);
-                    });
-                return update;
+                const fmt = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                el.textContent = Array.isArray(v) ? fmt(v[0]) + " → " + fmt(v[1]) : fmt(v);
+                el.classList.add("active");
             }
 
             const p1 = new Matai("#single", {
                 lang: ["he", "en"],
                 mode: "single",
-                onChange: (v) => show("single", p1)(v),
+                color: "#6c63ff",
+                onChange: v => setOut("single", v),
             });
-            show("single", p1);
 
             const p2 = new Matai("#range", {
                 lang: ["en", "he"],
                 mode: "range",
-                onChange: (v) => show("range", p2)(v),
+                color: "#f64f59",
+                onChange: v => setOut("range", v),
             });
-            show("range", p2);
         </script>
     </body>
 </html>
