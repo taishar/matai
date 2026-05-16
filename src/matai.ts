@@ -159,6 +159,7 @@ export class Matai {
 
     this.clearBtn.addEventListener("click", () => {
       this.clear();
+      this.onChange?.(null);
       this.searchInput.value = "";
       if (this.hintEl && this.hintTextEl) {
         this.hintEl.style.opacity = "1";
