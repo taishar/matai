@@ -246,7 +246,7 @@ export class Matai {
       this.handleInput();
     });
     this.searchInput.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") { this.hidePopup(); return; }
+      if (e.key === "Escape" || e.key === "Enter") { this.hidePopup(); return; }
       if (e.key === "Tab" && !this.searchInput.value && this.hintEl) {
         e.preventDefault();
         this.searchInput.value = this.hintExamples[this.hintIndex];

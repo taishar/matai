@@ -239,6 +239,16 @@ function parseNamedRange(input: string, locale: Locale): [Date, Date] | null {
   }
   if (matchPhrase(nr.weekend)) return computeWeekend("this", t, locale);
 
+  // 1b. Dual forms as ranges (skip "day" duals — those are point dates, not periods)
+  if (locale.tokens.dualForms) {
+    for (const df of locale.tokens.dualForms) {
+      if (df.unit === "day") continue;
+      const matched = df.forms.some(f => s === f || lower === f.toLowerCase()) ||
+        locale.tokens.inPrefix.some(p => df.forms.some(f => lower === `${p.toLowerCase()} ${f.toLowerCase()}`));
+      if (matched) return [t, applyOffset(t, df.count, df.unit)];
+    }
+  }
+
   // 2. Prefix-based period matching (EN: "this week", "last 30 days", "next month", "past 90 days")
   const isWeekend = (w: string) => nr.weekend.some(p => w === p.toLowerCase());
 
@@ -375,6 +385,15 @@ function parseSingle(input: string, locale: Locale): Date | null {
     }
   }
 
+  // 1a. Dual forms: bare ("שבועיים") or with inPrefix ("עוד שבועיים")
+  if (locale.tokens.dualForms) {
+    for (const df of locale.tokens.dualForms) {
+      const matched = df.forms.some(f => f.toLowerCase() === lower) ||
+        locale.tokens.inPrefix.some(p => df.forms.some(f => lower === `${p.toLowerCase()} ${f.toLowerCase()}`));
+      if (matched) return applyOffset(today(), df.count, df.unit);
+    }
+  }
+
   // 2. "N unit ago" (suffix) OR "ago N unit" (prefix)
   for (const affix of locale.tokens.agoSuffix) {
     const esc = escapeRegex(affix);
@@ -389,6 +408,25 @@ function parseSingle(input: string, locale: Locale): Date | null {
     if (m) {
       const unit = parseUnit(m[2], locale);
       if (unit) return applyOffset(today(), -+m[1], unit);
+    }
+  }
+
+  // 2b. "next/last [unit]" and "[unit] next/last" as single dates
+  const unitDirPairs: Array<{ toks: string[]; sign: 1 | -1 }> = [
+    { toks: locale.tokens.nextPrefix, sign: 1 },
+    { toks: locale.tokens.lastPrefix, sign: -1 },
+  ];
+  for (const { toks, sign } of unitDirPairs) {
+    for (const tok of toks) {
+      const lp = tok.toLowerCase();
+      const afterPrefix = lower.startsWith(lp + " ") ? lower.slice(lp.length + 1).trim() : null;
+      const beforeSuffix = lower.endsWith(" " + lp) ? lower.slice(0, lower.length - lp.length - 1).trim() : null;
+      for (const candidate of [afterPrefix, beforeSuffix]) {
+        if (candidate !== null) {
+          const unit = parseUnit(candidate, locale);
+          if (unit) return applyOffset(today(), sign, unit);
+        }
+      }
     }
   }
 

@@ -26,6 +26,7 @@ export interface LocaleTokens {
   };
   nUnitsPastSuffix: string[];
   nUnitsFutureSuffix: string[];
+  dualForms?: Array<{ forms: string[]; unit: "day" | "week" | "month" | "year" | "quarter"; count: number }>;
   weekdayOnPrefix: string[];
   dayNumericPrefix: string[];
   monthNamePrefix: string[];
