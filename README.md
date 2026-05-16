@@ -2,13 +2,16 @@
 
 A lightweight, zero-dependency date picker with natural language input. Supports English and Hebrew (RTL), single date and date range selection.
 
+**[Live demo](https://taishar.github.io/matai/demo/index.html)**
+
 ## Features
 
-- **Natural language input** — type `tomorrow`, `next Monday`, `in 3 weeks`, or `מחר`, `בעוד 3 ימים`
+- **Natural language input** — type `tomorrow`, `next Monday`, `in 3 weeks`, `last 30 days`, or `מחר`, `בעוד 3 ימים`
 - **Visual calendar** — click to pick, or type and the calendar follows
-- **Date range** — two-calendar range picker with hover preview
+- **Hint cycling** — the search field cycles through example phrases; press `Tab` to autocomplete
+- **Date range** — two-calendar range picker with hover preview and duration badge
+- **Auto language detection** — pass an array of languages and Matai detects which one you're typing in
 - **Hebrew / RTL** — full right-to-left support
-- **Dual language** — switch between EN and HE in the same instance
 - **No dependencies** — vanilla TypeScript, single minified JS output (~8kb)
 
 ## Usage
@@ -32,11 +35,12 @@ Include the built file and instantiate:
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `lang` | `'en' \| 'he' \| ['en','he']` | `'en'` | Language(s). Array shows a toggle button. |
+| `lang` | `'en' \| 'he' \| ['en','he']` | `'en'` | Language(s). Pass an array to enable auto-detection — Matai picks the language based on what you type. |
 | `mode` | `'single' \| 'range'` | `'single'` | Single date or date range. |
-| `format` | `string` | `'YYYY-MM-DD'` | Output format for the input field. |
+| `format` | `string` | `'DD/MM/YYYY'` | Output format for the input field. |
+| `color` | `string` | `#1a73e8` | Accent color (any CSS color value). |
 | `onChange` | `(value) => void` | — | Called when a date is selected. |
-| `placeholder` | `string` | locale default | Input placeholder text. |
+| `placeholder` | `string` | locale default | Placeholder for the search input inside the popup. |
 
 ## API
 
@@ -59,8 +63,13 @@ dp.destroy()           // remove from DOM and clean up listeners
 | `January 15` / `Jan 15 2025` | Month + day |
 | `2025-01-15` | ISO format |
 | `01/15/2025` | MM/DD/YYYY |
+| `this week` / `last week` / `next week` | Named week ranges |
+| `this month` / `last month` / `next month` | Named month ranges |
+| `last 30 days` / `past 2 weeks` | Past N units |
+| `Q1` / `Q2` / `Q3` / `Q4` | Quarter ranges |
 | `from Jan 5 to Jan 20` | Range |
 | `Jan 5 - Jan 20` | Range |
+| `between Jan 5 and Jan 20` | Range |
 
 ## Natural Language — Hebrew
 
@@ -71,6 +80,11 @@ dp.destroy()           // remove from DOM and clean up listeners
 | `בעוד 2 שבועות` / `בעוד חודש` | Relative offset |
 | `ביום שני` / `שלישי הבא` | Weekday relative |
 | `5 במאי` / `15 בינואר 2025` | Day + month |
+| `השבוע` / `שבוע שעבר` / `שבוע הבא` | Named week ranges |
+| `החודש` / `חודש שעבר` / `חודש הבא` | Named month ranges |
+| `30 ימים אחרונים` | Past N units |
+| `הרבעון` / `רבעון הבא` | Quarter ranges |
+| `סוף השבוע` | Weekend |
 | `5 במאי עד 25 במאי` | Range |
 | `מ-5 במאי עד 25 במאי` | Range |
 | `בין 5 במאי ל-25 במאי` | Range |
@@ -88,4 +102,10 @@ Output: `dist/matai.min.js`
 
 ## Demo
 
-Open `demo/index.html` in a browser after building.
+[https://taishar.github.io/matai/demo/index.html](https://taishar.github.io/matai/demo/index.html)
+
+Or open `demo/index.html` locally after building.
+
+## License
+
+MIT
