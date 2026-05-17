@@ -80,6 +80,7 @@ export class Matai {
   private timeStart: number | null = null;
   private timeEnd: number | null = null;
 
+  private isInput: boolean;
   private wrapper: HTMLElement;
   private input: HTMLInputElement;
   private popup: HTMLElement;
@@ -102,6 +103,7 @@ export class Matai {
 
   constructor(el: HTMLElement | string, options: MataiOptions = {}) {
     const target = resolveElement(el);
+    this.isInput = target instanceof HTMLInputElement;
 
     if (options.lang === undefined || Array.isArray(options.lang)) {
       const ordered: Lang[] = Array.isArray(options.lang)
@@ -130,11 +132,13 @@ export class Matai {
     this.input.setAttribute("aria-haspopup", "dialog");
     this.input.setAttribute("aria-expanded", "false");
     this.input.setAttribute("aria-label", this.ariaLabel());
-    this.input.placeholder =
-      this.mode === "range"    ? `${this.format.toLowerCase()} – ${this.format.toLowerCase()}` :
-      this.mode === "datetime" ? this.activeLocale().placeholderDatetime :
-      this.mode === "event"    ? this.activeLocale().placeholderEvent :
-      this.format.toLowerCase();
+    if (this.isInput) {
+      this.input.placeholder =
+        this.mode === "range"    ? `${this.format.toLowerCase()} – ${this.format.toLowerCase()}` :
+        this.mode === "datetime" ? this.activeLocale().placeholderDatetime :
+        this.mode === "event"    ? this.activeLocale().placeholderEvent :
+        this.format.toLowerCase();
+    }
     if (this.activeLocale().rtl) {
       this.wrapper.setAttribute("dir", "rtl");
       this.input.setAttribute("dir", "rtl");
@@ -398,11 +402,11 @@ export class Matai {
             this.timeEnd = dateToMinutes(e);
             this.setCalendarsSelected(this.pendingDate);
             this.timeColumn?.setSelected(this.timeStart, this.timeEnd);
-            this.input.value = this.formatEventText(this.pendingDate, this.timeStart, this.timeEnd);
+            if (this.isInput) this.input.value = this.formatEventText(this.pendingDate, this.timeStart, this.timeEnd);
           } else {
             this.setCalendarsSelected(parsed);
             this.updateBadge(parsed[0], parsed[1]);
-            this.input.value = this.formatRangeText(parsed[0], parsed[1]);
+            if (this.isInput) this.input.value = this.formatRangeText(parsed[0], parsed[1]);
           }
         } else {
           if (this.mode === "datetime") {
@@ -410,10 +414,10 @@ export class Matai {
             this.timeStart = dateToMinutes(parsed);
             this.setCalendarsSelected(parsed);
             this.timeColumn?.setSelected(this.timeStart);
-            this.input.value = this.formatDatetimeText(parsed, this.timeStart);
+            if (this.isInput) this.input.value = this.formatDatetimeText(parsed, this.timeStart);
           } else {
             this.setCalendarsSelected(parsed);
-            this.input.value = formatDate(parsed, this.format);
+            if (this.isInput) this.input.value = formatDate(parsed, this.format);
           }
         }
         this.onChange?.(this.value, () => this.hidePopup());
@@ -433,7 +437,7 @@ export class Matai {
     if (this.mode === "date") {
       this.value = d;
       const text = formatDate(d, this.format);
-      this.input.value = text;
+      if (this.isInput) this.input.value = text;
       this.setSearchValue(text);
       this.setCalendarsSelected(d);
       this.onChange?.(this.value, () => this.hidePopup());
@@ -459,7 +463,7 @@ export class Matai {
         const [lo, hi] = d >= start ? [start, d] : [d, start];
         this.value = [lo, hi];
         const text = this.formatRangeText(lo, hi);
-        this.input.value = text;
+        if (this.isInput) this.input.value = text;
         this.setSearchValue(text);
         this.setCalendarsSelectedNoJump([lo, hi]);
         this.calStart.setHoverEnd(null);
@@ -485,7 +489,7 @@ export class Matai {
     d.setHours(Math.floor(this.timeStart! / 60), this.timeStart! % 60, 0, 0);
     this.value = d;
     const text = this.formatDatetimeText(d, this.timeStart!);
-    this.input.value = text;
+    if (this.isInput) this.input.value = text;
     this.setSearchValue(text);
     this.setCalendarsSelected(d);
     this.onChange?.(this.value, () => this.hidePopup());
@@ -501,7 +505,7 @@ export class Matai {
     const endDate = new Date(date);   endDate.setHours(Math.floor(hi / 60), hi % 60, 0, 0);
     this.value = [startDate, endDate];
     const text = this.formatEventText(date, lo, hi);
-    this.input.value = text;
+    if (this.isInput) this.input.value = text;
     this.setSearchValue(text);
     this.calStart.setSelectedNoJump(date);
     this.onChange?.(this.value, () => this.hidePopup());
@@ -633,10 +637,10 @@ export class Matai {
       if (this.mode === "datetime") {
         this.pendingDate = dateOnly(date);
         this.timeStart = dateToMinutes(date);
-        this.input.value = this.formatDatetimeText(date, this.timeStart);
+        if (this.isInput) this.input.value = this.formatDatetimeText(date, this.timeStart);
         this.timeColumn?.setSelected(this.timeStart);
       } else {
-        this.input.value = formatDate(date, this.format);
+        if (this.isInput) this.input.value = formatDate(date, this.format);
       }
       this.setCalendarsSelected(date);
     } else {
@@ -645,11 +649,11 @@ export class Matai {
         this.pendingDate = dateOnly(s);
         this.timeStart = dateToMinutes(s);
         this.timeEnd = dateToMinutes(e);
-        this.input.value = this.formatEventText(this.pendingDate, this.timeStart, this.timeEnd);
+        if (this.isInput) this.input.value = this.formatEventText(this.pendingDate, this.timeStart, this.timeEnd);
         this.timeColumn?.setSelected(this.timeStart, this.timeEnd);
         this.setCalendarsSelected(this.pendingDate);
       } else {
-        this.input.value = this.formatRangeText(s, e);
+        if (this.isInput) this.input.value = this.formatRangeText(s, e);
         this.setCalendarsSelected(date);
       }
     }
@@ -657,7 +661,7 @@ export class Matai {
 
   clear(): void {
     this.value = null;
-    this.input.value = "";
+    if (this.isInput) this.input.value = "";
     this.setCalendarsSelected(null);
     this.updateBadge(null, null);
     this.rangeStep = 0;
