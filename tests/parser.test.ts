@@ -34,6 +34,23 @@ function addYears(date: Date, n: number): Date {
   return r;
 }
 
+function startOfHalf(year: number, half: 0 | 1): Date {
+  return half === 0 ? new Date(year, 0, 1) : new Date(year, 6, 1);
+}
+function endOfHalf(year: number, half: 0 | 1): Date {
+  return half === 0 ? new Date(year, 5, 30) : new Date(year, 11, 31);
+}
+function nthWeekdayOfMonth(year: number, month: number, weekday: number, nth: number): Date {
+  if (nth > 0) {
+    const first = new Date(year, month - 1, 1);
+    const diff = (weekday - first.getDay() + 7) % 7;
+    return new Date(year, month - 1, 1 + diff + (nth - 1) * 7);
+  }
+  const last = new Date(year, month, 0);
+  const diff = (last.getDay() - weekday + 7) % 7;
+  return new Date(year, month - 1, last.getDate() - diff);
+}
+
 function startOfWeek(date: Date, weekStart: number): Date {
   const r = new Date(date);
   r.setHours(0, 0, 0, 0);
@@ -382,6 +399,28 @@ describe("range/HE - quarters", () => {
     if (q > 3) { q = 0; qyr++; }
     expectRange(parse("רבעון הבא", he, "range"), startOfQuarter(qyr, q), endOfQuarter(qyr, q));
   });
+  test("רבעון ראשון (Q1, current year)", () =>
+    expectRange(parse("רבעון ראשון", he, "range"), startOfQuarter(T.getFullYear(), 0), endOfQuarter(T.getFullYear(), 0)));
+  test("רבעון שני (Q2, current year)", () =>
+    expectRange(parse("רבעון שני", he, "range"), startOfQuarter(T.getFullYear(), 1), endOfQuarter(T.getFullYear(), 1)));
+  test("רבעון שלישי (Q3, current year)", () =>
+    expectRange(parse("רבעון שלישי", he, "range"), startOfQuarter(T.getFullYear(), 2), endOfQuarter(T.getFullYear(), 2)));
+  test("רבעון רביעי (Q4, current year)", () =>
+    expectRange(parse("רבעון רביעי", he, "range"), startOfQuarter(T.getFullYear(), 3), endOfQuarter(T.getFullYear(), 3)));
+  test("רבעון ראשון 2024 (Q1 with year)", () =>
+    expectRange(parse("רבעון ראשון 2024", he, "range"), d(2024, 1, 1), d(2024, 3, 31)));
+  test("רבעון רביעי 2023 (Q4 with year)", () =>
+    expectRange(parse("רבעון רביעי 2023", he, "range"), d(2023, 10, 1), d(2023, 12, 31)));
+  test("רבעון 1 (Q1 numeric, current year)", () =>
+    expectRange(parse("רבעון 1", he, "range"), startOfQuarter(T.getFullYear(), 0), endOfQuarter(T.getFullYear(), 0)));
+  test("רבעון 2 (Q2 numeric, current year)", () =>
+    expectRange(parse("רבעון 2", he, "range"), startOfQuarter(T.getFullYear(), 1), endOfQuarter(T.getFullYear(), 1)));
+  test("רבעון 3 (Q3 numeric, current year)", () =>
+    expectRange(parse("רבעון 3", he, "range"), startOfQuarter(T.getFullYear(), 2), endOfQuarter(T.getFullYear(), 2)));
+  test("רבעון 4 (Q4 numeric, current year)", () =>
+    expectRange(parse("רבעון 4", he, "range"), startOfQuarter(T.getFullYear(), 3), endOfQuarter(T.getFullYear(), 3)));
+  test("רבעון 2 2024 (Q2 numeric with year)", () =>
+    expectRange(parse("רבעון 2 2024", he, "range"), d(2024, 4, 1), d(2024, 6, 30)));
 });
 
 describe("range/HE - weekend and N-unit ranges", () => {
@@ -443,6 +482,152 @@ describe("range/HE - month name alone → full month", () => {
     expectRange(parse("ינואר", he, "range"), d(yr, 1, 1), d(yr, 1, 31)));
   test("אוגוסט alone → full August", () =>
     expectRange(parse("אוגוסט", he, "range"), d(yr, 8, 1), d(yr, 8, 31)));
+});
+
+// ---- Half-year (EN) ----
+
+describe("range/EN - half-year", () => {
+  const yr = new Date().getFullYear();
+  test("H1 (current year)", () => expectRange(parse("H1", en, "range"), startOfHalf(yr, 0), endOfHalf(yr, 0)));
+  test("H2 (current year)", () => expectRange(parse("H2", en, "range"), startOfHalf(yr, 1), endOfHalf(yr, 1)));
+  test("h1 (lowercase)", () => expectRange(parse("h1", en, "range"), startOfHalf(yr, 0), endOfHalf(yr, 0)));
+  test("H1 2024", () => expectRange(parse("H1 2024", en, "range"), startOfHalf(2024, 0), endOfHalf(2024, 0)));
+  test("H2 2023", () => expectRange(parse("H2 2023", en, "range"), startOfHalf(2023, 1), endOfHalf(2023, 1)));
+  test("first half of 2024", () => expectRange(parse("first half of 2024", en, "range"), startOfHalf(2024, 0), endOfHalf(2024, 0)));
+  test("second half 2024", () => expectRange(parse("second half 2024", en, "range"), startOfHalf(2024, 1), endOfHalf(2024, 1)));
+  test("first half (current year)", () => expectRange(parse("first half", en, "range"), startOfHalf(yr, 0), endOfHalf(yr, 0)));
+  test("second half (current year)", () => expectRange(parse("second half", en, "range"), startOfHalf(yr, 1), endOfHalf(yr, 1)));
+});
+
+// ---- Half-year (HE) ----
+
+describe("range/HE - half-year", () => {
+  const yr = new Date().getFullYear();
+  test("מחצית ראשונה (H1 current year)", () => expectRange(parse("מחצית ראשונה", he, "range"), startOfHalf(yr, 0), endOfHalf(yr, 0)));
+  test("מחצית שנייה (H2 current year)", () => expectRange(parse("מחצית שנייה", he, "range"), startOfHalf(yr, 1), endOfHalf(yr, 1)));
+  test("מחצית ראשונה 2024", () => expectRange(parse("מחצית ראשונה 2024", he, "range"), startOfHalf(2024, 0), endOfHalf(2024, 0)));
+  test("מחצית שנייה 2023", () => expectRange(parse("מחצית שנייה 2023", he, "range"), startOfHalf(2023, 1), endOfHalf(2023, 1)));
+});
+
+// ---- Start/end of period (EN) ----
+
+describe("single/EN - start and end of period", () => {
+  const T = today();
+  const yr = T.getFullYear();
+  const q = Math.floor(T.getMonth() / 3);
+  test("start of this month", () => expectSingle(parse("start of this month", en, "single"), startOfMonth(T)));
+  test("start of next month", () => expectSingle(parse("start of next month", en, "single"), startOfMonth(addMonths(T, 1))));
+  test("start of last month", () => expectSingle(parse("start of last month", en, "single"), startOfMonth(addMonths(T, -1))));
+  test("end of this month", () => expectSingle(parse("end of this month", en, "single"), endOfMonth(T)));
+  test("end of next month", () => expectSingle(parse("end of next month", en, "single"), endOfMonth(addMonths(T, 1))));
+  test("beginning of 2025", () => expectSingle(parse("beginning of 2025", en, "single"), d(2025, 1, 1)));
+  test("end of 2024", () => expectSingle(parse("end of 2024", en, "single"), d(2024, 12, 31)));
+  test("start of this year", () => expectSingle(parse("start of this year", en, "single"), startOfYear(T)));
+  test("end of this year", () => expectSingle(parse("end of this year", en, "single"), endOfYear(T)));
+  test("start of this quarter", () => expectSingle(parse("start of this quarter", en, "single"), startOfQuarter(yr, q)));
+  test("end of this quarter", () => expectSingle(parse("end of this quarter", en, "single"), endOfQuarter(yr, q)));
+  test("end of last year", () => expectSingle(parse("end of last year", en, "single"), endOfYear(addYears(T, -1))));
+  test("start of next year", () => expectSingle(parse("start of next year", en, "single"), startOfYear(addYears(T, 1))));
+});
+
+// ---- Start/end of period (HE) ----
+
+describe("single/HE - start and end of period", () => {
+  const T = today();
+  const yr = T.getFullYear();
+  const q = Math.floor(T.getMonth() / 3);
+  test("תחילת החודש (start of this month)", () => expectSingle(parse("תחילת החודש", he, "single"), startOfMonth(T)));
+  test("סוף החודש (end of this month)", () => expectSingle(parse("סוף החודש", he, "single"), endOfMonth(T)));
+  test("תחילת השנה (start of this year)", () => expectSingle(parse("תחילת השנה", he, "single"), startOfYear(T)));
+  test("סוף השנה (end of this year)", () => expectSingle(parse("סוף השנה", he, "single"), endOfYear(T)));
+  test("תחילת הרבעון (start of this quarter)", () => expectSingle(parse("תחילת הרבעון", he, "single"), startOfQuarter(yr, q)));
+  test("סוף הרבעון (end of this quarter)", () => expectSingle(parse("סוף הרבעון", he, "single"), endOfQuarter(yr, q)));
+  test("תחילת החודש הבא (start of next month)", () => expectSingle(parse("תחילת החודש הבא", he, "single"), startOfMonth(addMonths(T, 1))));
+  test("סוף השנה שעברה (end of last year)", () => expectSingle(parse("סוף השנה שעברה", he, "single"), endOfYear(addYears(T, -1))));
+});
+
+// ---- Written-out numbers (EN) ----
+
+describe("single/EN - written-out numbers", () => {
+  const T = today();
+  test("in three days", () => expectSingle(parse("in three days", en, "single"), addDays(T, 3)));
+  test("three days ago", () => expectSingle(parse("three days ago", en, "single"), addDays(T, -3)));
+  test("in two weeks", () => expectSingle(parse("in two weeks", en, "single"), addDays(T, 14)));
+  test("two weeks ago", () => expectSingle(parse("two weeks ago", en, "single"), addDays(T, -14)));
+  test("in five months", () => expectSingle(parse("in five months", en, "single"), addMonths(T, 5)));
+  test("ten years ago", () => expectSingle(parse("ten years ago", en, "single"), addYears(T, -10)));
+  test("in a day", () => expectSingle(parse("in a day", en, "single"), addDays(T, 1)));
+  test("a week ago", () => expectSingle(parse("a week ago", en, "single"), addDays(T, -7)));
+  test("in a month", () => expectSingle(parse("in a month", en, "single"), addMonths(T, 1)));
+});
+
+// ---- Written-out numbers (HE) ----
+
+describe("single/HE - written-out numbers", () => {
+  const T = today();
+  test("בעוד שלושה ימים (in 3 days, masc)", () => expectSingle(parse("בעוד שלושה ימים", he, "single"), addDays(T, 3)));
+  test("לפני שלושה ימים (3 days ago, masc)", () => expectSingle(parse("לפני שלושה ימים", he, "single"), addDays(T, -3)));
+  test("בעוד שלוש שנים (in 3 years, fem)", () => expectSingle(parse("בעוד שלוש שנים", he, "single"), addYears(T, 3)));
+  test("לפני שלוש שנים (3 years ago, fem)", () => expectSingle(parse("לפני שלוש שנים", he, "single"), addYears(T, -3)));
+  test("בעוד חמישה שבועות (in 5 weeks, masc)", () => expectSingle(parse("בעוד חמישה שבועות", he, "single"), addDays(T, 35)));
+  test("בעוד ארבעה חודשים (in 4 months, masc)", () => expectSingle(parse("בעוד ארבעה חודשים", he, "single"), addMonths(T, 4)));
+});
+
+// ---- Period-to-date (EN) ----
+
+describe("range/EN - period-to-date", () => {
+  const T = today();
+  const yr = T.getFullYear();
+  const q = Math.floor(T.getMonth() / 3);
+  test("year to date", () => expectRange(parse("year to date", en, "range"), startOfYear(T), T));
+  test("YTD", () => expectRange(parse("YTD", en, "range"), startOfYear(T), T));
+  test("month to date", () => expectRange(parse("month to date", en, "range"), startOfMonth(T), T));
+  test("MTD", () => expectRange(parse("MTD", en, "range"), startOfMonth(T), T));
+  test("quarter to date", () => expectRange(parse("quarter to date", en, "range"), startOfQuarter(yr, q), T));
+  test("QTD", () => expectRange(parse("QTD", en, "range"), startOfQuarter(yr, q), T));
+});
+
+// ---- Period-to-date (HE) ----
+
+describe("range/HE - period-to-date", () => {
+  const T = today();
+  const yr = T.getFullYear();
+  const q = Math.floor(T.getMonth() / 3);
+  test("מתחילת השנה (year to date)", () => expectRange(parse("מתחילת השנה", he, "range"), startOfYear(T), T));
+  test("מתחילת החודש (month to date)", () => expectRange(parse("מתחילת החודש", he, "range"), startOfMonth(T), T));
+  test("מתחילת הרבעון (quarter to date)", () => expectRange(parse("מתחילת הרבעון", he, "range"), startOfQuarter(yr, q), T));
+});
+
+// ---- Nth weekday of month (EN) ----
+
+describe("single/EN - nth weekday of month", () => {
+  const yr = new Date().getFullYear();
+  test("first Monday of March", () => expectSingle(parse("first Monday of March", en, "single"), nthWeekdayOfMonth(yr, 3, 1, 1)));
+  test("third Tuesday of November 2024", () => expectSingle(parse("third Tuesday of November 2024", en, "single"), nthWeekdayOfMonth(2024, 11, 2, 3)));
+  test("last Friday of January", () => expectSingle(parse("last Friday of January", en, "single"), nthWeekdayOfMonth(yr, 1, 5, -1)));
+  test("second Wednesday of June 2025", () => expectSingle(parse("second Wednesday of June 2025", en, "single"), nthWeekdayOfMonth(2025, 6, 3, 2)));
+  test("last Sunday of December 2024", () => expectSingle(parse("last Sunday of December 2024", en, "single"), nthWeekdayOfMonth(2024, 12, 0, -1)));
+});
+
+// ---- Nth weekday of month (HE) ----
+
+describe("single/HE - nth weekday of month", () => {
+  const yr = new Date().getFullYear();
+  test("שני הראשון של מרץ (first Monday of March)", () => expectSingle(parse("שני הראשון של מרץ", he, "single"), nthWeekdayOfMonth(yr, 3, 1, 1)));
+  test("שישי האחרון של ינואר (last Friday of January)", () => expectSingle(parse("שישי האחרון של ינואר", he, "single"), nthWeekdayOfMonth(yr, 1, 5, -1)));
+  test("שלישי השלישי של נובמבר 2024 (third Tuesday of November 2024)", () => expectSingle(parse("שלישי השלישי של נובמבר 2024", he, "single"), nthWeekdayOfMonth(2024, 11, 2, 3)));
+});
+
+// ---- Rolling / trailing windows (EN) ----
+
+describe("range/EN - rolling and trailing windows", () => {
+  const T = today();
+  test("rolling 30 days", () => expectRange(parse("rolling 30 days", en, "range"), addDays(T, -30), T));
+  test("rolling 7 days", () => expectRange(parse("rolling 7 days", en, "range"), addDays(T, -7), T));
+  test("trailing 12 months", () => expectRange(parse("trailing 12 months", en, "range"), addMonths(T, -12), T));
+  test("trailing 4 weeks", () => expectRange(parse("trailing 4 weeks", en, "range"), addDays(T, -28), T));
+  test("over the last 7 days", () => expectRange(parse("over the last 7 days", en, "range"), addDays(T, -7), T));
+  test("within the last 30 days", () => expectRange(parse("within the last 30 days", en, "range"), addDays(T, -30), T));
 });
 
 describe("parseWithAutoDetect", () => {

@@ -32,6 +32,16 @@ export interface LocaleTokens {
   monthNamePrefix: string[];
   pastPrefix: string[];
   rangePairs: [string, string][];
+  quarterOrdinals?: string[];
+  halfYearFirst?: string[];
+  halfYearSecond?: string[];
+  periodStartWords?: string[];
+  periodEndWords?: string[];
+  numberWords?: Record<string, number>;
+  periodToDatePhrases?: { year?: string[]; month?: string[]; quarter?: string[]; };
+  nthWeekdayOrdinals?: string[];
+  nthWeekdayLast?: string[];
+  nthWeekdayOf?: string[];
 }
 
 export interface Locale {

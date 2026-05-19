@@ -178,6 +178,29 @@ function startOfQuarter(year: number, q: number): Date { return new Date(year, q
 function endOfQuarter(year: number, q: number): Date { return new Date(year, q * 3 + 3, 0); }
 function prevQuarterQ(q: number, yr: number): [number, number] { return q === 0 ? [3, yr - 1] : [q - 1, yr]; }
 function nextQuarterQ(q: number, yr: number): [number, number] { return q === 3 ? [0, yr + 1] : [q + 1, yr]; }
+function halfRange(year: number, half: 0 | 1): [Date, Date] {
+  return half === 0
+    ? [new Date(year, 0, 1), new Date(year, 5, 30)]
+    : [new Date(year, 6, 1), new Date(year, 11, 31)];
+}
+function nthWeekdayOfMonth(year: number, month: number, weekday: number, nth: number): Date {
+  if (nth > 0) {
+    const first = new Date(year, month - 1, 1);
+    const diff = (weekday - first.getDay() + 7) % 7;
+    return new Date(year, month - 1, 1 + diff + (nth - 1) * 7);
+  }
+  const last = new Date(year, month, 0);
+  const diff = (last.getDay() - weekday + 7) % 7;
+  return new Date(year, month - 1, last.getDate() - diff);
+}
+function resolveNumber(s: string, locale: Locale): number | null {
+  if (/^\d+$/.test(s)) return +s;
+  if (locale.tokens.numberWords) {
+    const n = locale.tokens.numberWords[s.toLowerCase()];
+    if (n !== undefined) return n;
+  }
+  return null;
+}
 
 function computeWeekend(dir: "this" | "last" | "next", t: Date, locale: Locale): [Date, Date] {
   const ws = locale.weekendStart;
@@ -335,6 +358,47 @@ function parseNamedRange(input: string, locale: Locale): [Date, Date] | null {
   m = s.match(/^[Qq]([1-4])(?:\s+(\d{2,4}))?$/);
   if (m) return quarterRange(m[2] ? expandYear(+m[2]) : t.getFullYear(), +m[1] - 1);
 
+  // 4b. Locale: "{quarterWord} {ordinal|digit} [year]" e.g. "רבעון ראשון 2024" / "רבעון 1"
+  if (locale.tokens.quarterOrdinals?.length) {
+    const qWords = locale.tokens.units.quarter.map(escapeRegex).join("|");
+    const ords = locale.tokens.quarterOrdinals.map(escapeRegex).join("|");
+    const qm = s.match(new RegExp(`^(?:${qWords})\\s+(?:(${ords})|([1-4]))(?:\\s+(\\d{2,4}))?$`));
+    if (qm) {
+      const qi = qm[1]
+        ? locale.tokens.quarterOrdinals.findIndex(o => o === qm[1])
+        : +qm[2] - 1;
+      if (qi >= 0 && qi <= 3) {
+        const qyr = qm[3] ? expandYear(+qm[3]) : t.getFullYear();
+        return quarterRange(qyr, qi);
+      }
+    }
+  }
+
+  // 4c. Universal: H1/H2 [year]
+  m = s.match(/^[Hh]([12])(?:\s+(\d{2,4}))?$/);
+  if (m) return halfRange(m[2] ? expandYear(+m[2]) : t.getFullYear(), (+m[1] - 1) as 0 | 1);
+
+  // 4d. Locale: half-year text ("first half of 2024", "מחצית ראשונה 2024")
+  for (const [phrases, half] of [
+    [locale.tokens.halfYearFirst ?? [], 0 as const],
+    [locale.tokens.halfYearSecond ?? [], 1 as const],
+  ] as const) {
+    for (const phrase of phrases) {
+      const lp = phrase.toLowerCase();
+      if (lower === lp) return halfRange(t.getFullYear(), half);
+      const yrM = s.match(new RegExp(`^${escapeRegex(phrase)}(?:\\s+of)?\\s+(\\d{2,4})$`, "i"));
+      if (yrM) return halfRange(expandYear(+yrM[1]), half);
+    }
+  }
+
+  // 4e. Period-to-date (YTD / MTD / QTD / locale equivalents)
+  if (locale.tokens.periodToDatePhrases) {
+    const ptd = locale.tokens.periodToDatePhrases;
+    if (ptd.year?.some(p => lower === p.toLowerCase())) return [startOfYear(t), t];
+    if (ptd.month?.some(p => lower === p.toLowerCase())) return [startOfMonth(t), t];
+    if (ptd.quarter?.some(p => lower === p.toLowerCase())) return [startOfQuarter(t.getFullYear(), curQ), t];
+  }
+
   // 5. Universal: 4-digit year alone → full year
   m = s.match(/^(\d{4})$/);
   if (m && +m[1] >= 1900 && +m[1] <= 2100) return yearRange(new Date(+m[1], 0, 1));
@@ -356,6 +420,12 @@ function parseNamedRange(input: string, locale: Locale): [Date, Date] | null {
   return null;
 }
 
+function resolveStartEnd(periodStr: string, locale: Locale, isStart: boolean): Date | null {
+  const range = parseNamedRange(periodStr, locale);
+  if (range) return isStart ? range[0] : range[1];
+  return null;
+}
+
 function parseSingle(input: string, locale: Locale): Date | null {
   const s = input.trim();
   if (!s) return null;
@@ -373,13 +443,14 @@ function parseSingle(input: string, locale: Locale): Date | null {
   // Yesterday
   if (locale.tokens.yesterday.some(t => t.toLowerCase() === lower)) return addDays(today(), -1);
 
-  // 1. "in N unit" (prefix before number)
+  // 1. "in N unit" (prefix before number, digits or word numbers)
   for (const prefix of locale.tokens.inPrefix) {
-    const re = new RegExp(`^${escapeRegex(prefix)}\\s+(\\d+)\\s+(\\S+)$`, "i");
+    const re = new RegExp(`^${escapeRegex(prefix)}\\s+(\\S+)\\s+(\\S+)$`, "i");
     const m = s.match(re) ?? lower.match(re);
     if (m) {
+      const n = resolveNumber(m[1], locale);
       const unit = parseUnit(m[2], locale);
-      if (unit) return applyOffset(today(), +m[1], unit);
+      if (n !== null && unit) return applyOffset(today(), n, unit);
     }
   }
 
@@ -392,20 +463,22 @@ function parseSingle(input: string, locale: Locale): Date | null {
     }
   }
 
-  // 2. "N unit ago" (suffix) OR "ago N unit" (prefix)
+  // 2. "N unit ago" (suffix) OR "ago N unit" (prefix), digits or word numbers
   for (const affix of locale.tokens.agoSuffix) {
     const esc = escapeRegex(affix);
-    let m = s.match(new RegExp(`^(\\d+)\\s+(\\S+)\\s+${esc}$`, "i"))
-          ?? lower.match(new RegExp(`^(\\d+)\\s+(\\S+)\\s+${esc}$`, "i"));
+    let m = s.match(new RegExp(`^(\\S+)\\s+(\\S+)\\s+${esc}$`, "i"))
+          ?? lower.match(new RegExp(`^(\\S+)\\s+(\\S+)\\s+${esc}$`, "i"));
     if (m) {
+      const n = resolveNumber(m[1], locale);
       const unit = parseUnit(m[2], locale);
-      if (unit) return applyOffset(today(), -+m[1], unit);
+      if (n !== null && unit) return applyOffset(today(), -n, unit);
     }
-    m = s.match(new RegExp(`^${esc}\\s+(\\d+)\\s+(\\S+)$`, "i"))
-      ?? lower.match(new RegExp(`^${esc}\\s+(\\d+)\\s+(\\S+)$`, "i"));
+    m = s.match(new RegExp(`^${esc}\\s+(\\S+)\\s+(\\S+)$`, "i"))
+      ?? lower.match(new RegExp(`^${esc}\\s+(\\S+)\\s+(\\S+)$`, "i"));
     if (m) {
+      const n = resolveNumber(m[1], locale);
       const unit = parseUnit(m[2], locale);
-      if (unit) return applyOffset(today(), -+m[1], unit);
+      if (n !== null && unit) return applyOffset(today(), -n, unit);
     }
   }
 
@@ -496,6 +569,53 @@ function parseSingle(input: string, locale: Locale): Date | null {
         const yr = m[2] ? expandYear(+m[2]) : today().getFullYear();
         const d = new Date(yr, mo, +m[1]);
         if (isValid(d, mo, +m[1])) return startOfDay(d);
+      }
+    }
+  }
+
+  // 7. Start/end of period ("start of this month", "end of next year", "תחילת החודש")
+  for (const [words, isStart] of [
+    [locale.tokens.periodStartWords ?? [], true],
+    [locale.tokens.periodEndWords ?? [], false],
+  ] as [string[], boolean][]) {
+    for (const word of words) {
+      const lw = word.toLowerCase();
+      if (lower.startsWith(lw + " ")) {
+        const rest = lower.slice(lw.length + 1).trim();
+        const date = resolveStartEnd(rest, locale, isStart);
+        if (date) return date;
+      }
+    }
+  }
+
+  // 8. Nth weekday of month ("first Monday of March", "שני הראשון של מרץ")
+  if (locale.tokens.nthWeekdayOrdinals?.length && locale.tokens.nthWeekdayOf?.length) {
+    const nths = locale.tokens.nthWeekdayOrdinals;
+    const lasts = locale.tokens.nthWeekdayLast ?? [];
+    const ofs = locale.tokens.nthWeekdayOf.map(escapeRegex).join("|");
+    const allOrdPat = [...nths, ...lasts].map(escapeRegex).join("|");
+
+    let ordStr: string | undefined, dayStr: string | undefined, monthStr: string | undefined, yearStr: string | undefined;
+
+    // Order 1: {ordinal} {weekday} {of} {month} [year]  (EN)
+    let nthM = s.match(new RegExp(`^(${allOrdPat})\\s+(\\S+)\\s+(?:${ofs})\\s+(\\S+)(?:\\s+(\\d{2,4}))?$`, "i"));
+    if (nthM) {
+      [, ordStr, dayStr, monthStr, yearStr] = nthM;
+    } else {
+      // Order 2: {weekday} {ordinal} {of} {month} [year]  (HE)
+      nthM = s.match(new RegExp(`^(\\S+)\\s+(${allOrdPat})\\s+(?:${ofs})\\s+(\\S+)(?:\\s+(\\d{2,4}))?$`, "i"));
+      if (nthM) [, dayStr, ordStr, monthStr, yearStr] = nthM;
+    }
+
+    if (nthM && ordStr && dayStr && monthStr) {
+      const dayIdx = matchDayName(dayStr, locale);
+      const monthIdx = matchMonthName(monthStr, locale);
+      if (dayIdx >= 0 && monthIdx >= 0) {
+        const yr = yearStr ? expandYear(+yearStr) : today().getFullYear();
+        const nthIdx = nths.findIndex(n => n.toLowerCase() === ordStr!.toLowerCase());
+        const isLast = lasts.some(l => l.toLowerCase() === ordStr!.toLowerCase());
+        const nth = isLast ? -1 : nthIdx + 1;
+        return startOfDay(nthWeekdayOfMonth(yr, monthIdx + 1, dayIdx, nth));
       }
     }
   }
