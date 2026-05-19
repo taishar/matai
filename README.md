@@ -67,6 +67,33 @@ dp.clear()             // reset
 dp.destroy()           // remove from DOM and clean up listeners
 ```
 
+## Split range picker
+
+Any element can be passed as the trigger — not just `<input>`. When the element is not an `<input>`, Matai opens the popup as usual but never writes a value back to the trigger. This is useful for a split start/end pattern where two individual date pickers are paired with a range button:
+
+```html
+<input id="start" />
+<input id="end" />
+<button id="range-btn">Select range</button>
+
+<script>
+  const startPicker = new Matai('#start', { lang: 'en', mode: 'date' });
+  const endPicker   = new Matai('#end',   { lang: 'en', mode: 'date' });
+
+  new Matai('#range-btn', {
+    lang: 'en',
+    mode: 'range',
+    onChange: ([start, end], close) => {
+      startPicker.setValue(start);
+      endPicker.setValue(end);
+      close();
+    },
+  });
+</script>
+```
+
+Clicking **Select range** opens a two-calendar range popup. When the user confirms a range, `onChange` fires with `[start, end]` and you update the two individual pickers via `setValue`.
+
 ## Natural Language — English
 
 | Input | Result |
