@@ -11,9 +11,13 @@ export class TimeColumn {
   private mode: "single" | "range";
   private grid!: HTMLElement;
   private selectionEl!: HTMLElement;
+  private minSlotMin: number = 0;
+  private maxSlotMin: number = 1425;
 
-  constructor(mode: "single" | "range") {
+  constructor(mode: "single" | "range", minHour?: number, maxHour?: number) {
     this.mode = mode;
+    if (minHour !== undefined) this.minSlotMin = minHour * 60;
+    if (maxHour !== undefined) this.maxSlotMin = maxHour * 60 + 45;
     this.el = document.createElement("div");
     this.el.className = "matai-time-col" + (mode === "range" ? " matai-time-col--drag" : "");
     this.el.setAttribute("tabindex", "-1");
@@ -32,6 +36,7 @@ export class TimeColumn {
 
       if (m % 60 === 0) slot.dataset.hour = "1";
       else if (m % 30 === 0) slot.dataset.half = "1";
+      if (m < this.minSlotMin || m > this.maxSlotMin) slot.dataset.disabled = "1";
 
       const lbl = document.createElement("span");
       lbl.className = "matai-time-slot-label";
@@ -62,10 +67,15 @@ export class TimeColumn {
     this.selectionEl.style.display = "block";
   }
 
+  private clamp(m: number): number {
+    return Math.max(this.minSlotMin, Math.min(this.maxSlotMin, m));
+  }
+
   private bindEvents(): void {
     if (this.mode === "single") {
       this.grid.addEventListener("click", (e) => {
         const m = this.minutesAt(e.clientY);
+        if (m < this.minSlotMin || m > this.maxSlotMin) return;
         this.placeSelection(m, m + 15);
         this.onSelect?.(m);
       });
@@ -74,14 +84,14 @@ export class TimeColumn {
 
       this.grid.addEventListener("pointermove", (e) => {
         if (dragStart === null) return;
-        const cur = this.minutesAt(e.clientY);
+        const cur = this.clamp(this.minutesAt(e.clientY));
         const [lo, hi] = dragStart <= cur ? [dragStart, cur + 15] : [cur, dragStart + 15];
         this.placeSelection(lo, hi);
       });
 
       this.grid.addEventListener("pointerup", (e) => {
         if (dragStart === null) return;
-        const cur = this.minutesAt(e.clientY);
+        const cur = this.clamp(this.minutesAt(e.clientY));
         const [lo, hi] = dragStart <= cur ? [dragStart, cur + 15] : [cur, dragStart + 15];
         const end = Math.min(hi, 1440);
         this.placeSelection(lo, end);
@@ -93,9 +103,11 @@ export class TimeColumn {
       this.grid.addEventListener("pointercancel", () => { dragStart = null; });
 
       this.grid.addEventListener("pointerdown", (e) => {
+        const raw = this.minutesAt(e.clientY);
+        if (raw < this.minSlotMin || raw > this.maxSlotMin) return;
         e.preventDefault();
         this.grid.setPointerCapture(e.pointerId);
-        dragStart = this.minutesAt(e.clientY);
+        dragStart = raw;
         this.placeSelection(dragStart, dragStart + 15);
       });
     }

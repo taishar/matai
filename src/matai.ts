@@ -100,6 +100,11 @@ export class Matai {
   private hintFadeTimer: ReturnType<typeof setTimeout> | null = null;
   private clearBtn: HTMLButtonElement | null = null;
   private _vvResizeHandler: (() => void) | null = null;
+  private errorEl: HTMLElement | null = null;
+  private minDate: Date | null = null;
+  private maxDate: Date | null = null;
+  private minHour: number | null = null;
+  private maxHour: number | null = null;
 
   constructor(el: HTMLElement | string, options: MataiOptions = {}) {
     const target = resolveElement(el);
@@ -120,6 +125,10 @@ export class Matai {
     this.mode = options.mode ?? "date";
     this.format = options.format ?? "DD/MM/YYYY";
     this.onChange = options.onChange ?? null;
+    if (options.minDate) this.minDate = dateOnly(options.minDate);
+    if (options.maxDate) this.maxDate = dateOnly(options.maxDate);
+    if (options.minHour !== undefined) this.minHour = options.minHour;
+    if (options.maxHour !== undefined) this.maxHour = options.maxHour;
 
     this.wrapper = document.createElement("div");
     this.wrapper.className = "matai-wrapper";
@@ -132,13 +141,6 @@ export class Matai {
     this.input.setAttribute("aria-haspopup", "dialog");
     this.input.setAttribute("aria-expanded", "false");
     this.input.setAttribute("aria-label", this.ariaLabel());
-<<<<<<< HEAD
-    this.input.placeholder =
-      this.mode === "range"    ? `${this.format.toLowerCase()} – ${this.format.toLowerCase()}` :
-      this.mode === "datetime" ? this.activeLocale().placeholderDatetime :
-      this.mode === "event"    ? this.activeLocale().placeholderEvent :
-      this.format.toLowerCase();
-=======
     if (this.isInput) {
       this.input.placeholder =
         this.mode === "range"    ? `${this.format.toLowerCase()} – ${this.format.toLowerCase()}` :
@@ -146,7 +148,6 @@ export class Matai {
         this.mode === "event"    ? this.activeLocale().placeholderEvent :
         this.format.toLowerCase();
     }
->>>>>>> a9304cdafd2b47a2dd56b7aeb16a7d30686493f2
     if (this.activeLocale().rtl) {
       this.wrapper.setAttribute("dir", "rtl");
       this.input.setAttribute("dir", "rtl");
@@ -225,12 +226,19 @@ export class Matai {
     this.popup.appendChild(searchWrapper);
 
     const now = new Date();
-    this.calStart = new Calendar(this.activeLocale(), this.mode, now.getFullYear(), now.getMonth());
+    this.calStart = new Calendar(
+      this.activeLocale(), this.mode,
+      now.getFullYear(), now.getMonth(),
+      this.minDate ?? undefined, this.maxDate ?? undefined
+    );
     this.calStart.onSelect(d => this.handleSelect(d));
 
     if (this.mode === "range") {
       const [ny, nm] = nextMonth(now.getFullYear(), now.getMonth());
-      this.calEnd = new Calendar(this.activeLocale(), this.mode, ny, nm);
+      this.calEnd = new Calendar(
+        this.activeLocale(), this.mode, ny, nm,
+        this.minDate ?? undefined, this.maxDate ?? undefined
+      );
       this.calEnd.onSelect(d => this.handleSelect(d));
 
       this.wireRangeNavigation();
@@ -250,7 +258,11 @@ export class Matai {
       this.popup.appendChild(this.badgeEl);
     } else if (this.mode === "datetime" || this.mode === "event") {
       const tcMode = this.mode === "datetime" ? "single" : "range";
-      this.timeColumn = new TimeColumn(tcMode);
+      this.timeColumn = new TimeColumn(
+        tcMode,
+        this.minHour ?? undefined,
+        this.maxHour ?? undefined
+      );
       this.timeColumn.onSelect = (start, end) => this.handleTimeSelect(start, end);
       this.timeColumn.getElement().setAttribute("aria-label", "Select time");
 
@@ -262,6 +274,11 @@ export class Matai {
     } else {
       this.popup.appendChild(this.calStart.getElement());
     }
+
+    this.errorEl = document.createElement("div");
+    this.errorEl.className = "matai-error";
+    this.errorEl.appendChild(document.createElement("span"));
+    this.popup.appendChild(this.errorEl);
 
     this.wrapper.appendChild(this.input);
     this.wrapper.appendChild(this.popup);
@@ -392,6 +409,31 @@ export class Matai {
     });
   }
 
+  private isDateInBounds(d: Date): boolean {
+    const day = dateOnly(d);
+    if (this.minDate && day < this.minDate) return false;
+    if (this.maxDate && day > this.maxDate) return false;
+    return true;
+  }
+
+  private isHourInBounds(h: number): boolean {
+    if (this.minHour !== null && h < this.minHour) return false;
+    if (this.maxHour !== null && h > this.maxHour) return false;
+    return true;
+  }
+
+  private showError(msg: string): void {
+    if (!this.errorEl) return;
+    const span = this.errorEl.querySelector("span")!;
+    span.textContent = msg;
+    span.style.visibility = "visible";
+  }
+
+  private clearError(): void {
+    if (!this.errorEl) return;
+    this.errorEl.querySelector("span")!.style.visibility = "hidden";
+  }
+
   private handleInput(): void {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
@@ -399,6 +441,21 @@ export class Matai {
         ? parseWithAutoDetect(this.searchInput.value, this.autoDetectLocales, this.mode)
         : parse(this.searchInput.value, this.activeLocale(), this.mode);
       if (parsed) {
+        // Validate against constraints
+        if (parsed instanceof Date) {
+          if (!this.isDateInBounds(parsed)) { this.showError("Date out of range"); return; }
+          if ((this.mode === "datetime" || this.mode === "event") && !this.isHourInBounds(parsed.getHours())) {
+            this.showError("Time out of range"); return;
+          }
+        } else if (Array.isArray(parsed)) {
+          if (!this.isDateInBounds(parsed[0]) || !this.isDateInBounds(parsed[1])) {
+            this.showError("Date out of range"); return;
+          }
+          if (this.mode === "event" && (!this.isHourInBounds(parsed[0].getHours()) || !this.isHourInBounds(parsed[1].getHours()))) {
+            this.showError("Time out of range"); return;
+          }
+        }
+        this.clearError();
         this.value = parsed;
         this.rangeStep = 0;
         this.rangeStart = null;
@@ -430,6 +487,8 @@ export class Matai {
         }
         this.onChange?.(this.value, () => this.hidePopup());
         this.updateClearBtn();
+      } else {
+        this.clearError();
       }
     }, 300);
   }

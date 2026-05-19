@@ -13,6 +13,10 @@ function isBetween(d: Date, start: Date, end: Date): boolean {
   return d > start && d < end;
 }
 
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 export class Calendar {
   private locale: Locale;
   private mode: Mode;
@@ -24,13 +28,17 @@ export class Calendar {
   private gridEl: HTMLElement | null = null;
   private selectCallback: ((d: Date) => void) | null = null;
   private navigateCallback: ((year: number, month: number) => void) | null = null;
+  private minDate: Date | null = null;
+  private maxDate: Date | null = null;
 
-  constructor(locale: Locale, mode: Mode, year?: number, month?: number) {
+  constructor(locale: Locale, mode: Mode, year?: number, month?: number, minDate?: Date, maxDate?: Date) {
     this.locale = locale;
     this.mode = mode;
     const now = new Date();
     this.year = year ?? now.getFullYear();
     this.month = month ?? now.getMonth();
+    if (minDate) this.minDate = startOfDay(minDate);
+    if (maxDate) this.maxDate = startOfDay(maxDate);
     this.el = document.createElement("div");
     this.el.className = "matai-cal";
     if (locale.rtl) this.el.setAttribute("dir", "rtl");
@@ -93,6 +101,13 @@ export class Calendar {
 
   onNavigate(fn: (year: number, month: number) => void): void {
     this.navigateCallback = fn;
+  }
+
+  private isDisabled(d: Date): boolean {
+    const day = startOfDay(d);
+    if (this.minDate && day < this.minDate) return true;
+    if (this.maxDate && day > this.maxDate) return true;
+    return false;
   }
 
   private render(): void {
@@ -195,6 +210,7 @@ export class Calendar {
       grid.addEventListener("pointerdown", (e) => {
         const cell = cellAt(e.clientX, e.clientY);
         if (!cell?.dataset.date) return;
+        if (cell.dataset.disabled === "1") return;
         e.preventDefault();
         grid.setPointerCapture(e.pointerId);
         dragStartDate = new Date(cell.dataset.date + "T00:00:00");
@@ -219,17 +235,13 @@ export class Calendar {
         if (!dragStartDate) return;
         if (dragging) {
           const cell = cellAt(e.clientX, e.clientY);
-          if (cell?.dataset.date) {
+          if (cell?.dataset.date && cell.dataset.disabled !== "1") {
             grid.dataset.suppressClick = "1";
             this.selectCallback?.(new Date(cell.dataset.date + "T00:00:00"));
             setTimeout(() => { delete grid.dataset.suppressClick; }, 0);
           }
-<<<<<<< HEAD
         } else {
-          // e.preventDefault() in pointerdown suppressed the click event, handle it here
           this.selectCallback?.(dragStartDate);
-=======
->>>>>>> a9304cdafd2b47a2dd56b7aeb16a7d30686493f2
         }
         dragStartDate = null;
         dragging = false;
@@ -253,15 +265,18 @@ export class Calendar {
     cell.appendChild(label);
     cell.dataset.date = toLocalISO(d);
     if (otherMonth) cell.dataset.otherMonth = "1";
+    if (this.isDisabled(d)) cell.dataset.disabled = "1";
 
     this.applyClasses(cell, d, todayDate);
 
     cell.addEventListener("click", () => {
       if (this.gridEl?.dataset.suppressClick === "1") return;
+      if (cell.dataset.disabled === "1") return;
       this.selectCallback?.(d);
     });
     cell.addEventListener("mouseenter", () => {
-      if (this.mode === "range") this.selectCallback && this.el.dispatchEvent(new CustomEvent("matai-hover", { detail: d, bubbles: true }));
+      if (this.mode === "range" && cell.dataset.disabled !== "1")
+        this.selectCallback && this.el.dispatchEvent(new CustomEvent("matai-hover", { detail: d, bubbles: true }));
     });
 
     return cell;

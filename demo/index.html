@@ -203,6 +203,32 @@
                 font-weight: 600;
             }
 
+            .card-constraints {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-bottom: 18px;
+            }
+            .constraint-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 11px;
+                font-weight: 600;
+                font-family: ui-monospace, 'SF Mono', monospace;
+                background: #f3f4f6;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                padding: 3px 8px;
+                color: #555;
+            }
+            .constraint-chip .chip-key { color: #9ca3af; font-weight: 500; }
+
+            .card-booking { background: linear-gradient(90deg, #8b5cf6, #c084fc) top/100% 3px no-repeat, #fff; }
+            .card-booking .card-icon { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #8b5cf6; }
+            .card-biz { background: linear-gradient(90deg, #f59e0b, #fbbf24) top/100% 3px no-repeat, #fff; }
+            .card-biz .card-icon { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #f59e0b; }
+
             /* ── FOOTER ───────────────────────────── */
             .footer {
                 text-align: center;
@@ -319,6 +345,55 @@
                 </div>
 
             </div>
+
+            <!-- CONSTRAINTS SECTION -->
+            <div style="margin-top: 64px;">
+                <p class="section-eyebrow">Constraints</p>
+                <h2 class="section-title" style="font-size: clamp(1.2rem,2.5vw,1.7rem); margin-bottom: 8px;">With limits applied</h2>
+                <p class="section-sub">
+                    Use <code style="font: inherit; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem;">minDate</code>,
+                    <code style="font: inherit; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem;">maxDate</code>,
+                    <code style="font: inherit; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem;">minHour</code>,
+                    <code style="font: inherit; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; padding: 1px 5px; font-size: 0.8rem;">maxHour</code>
+                    to restrict what can be selected.
+                </p>
+
+                <div class="demo-cards">
+
+                    <div class="demo-card card-booking">
+                        <div class="card-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                <path d="M9 16l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div class="card-title">Booking Window</div>
+                        <div class="card-desc">Dates outside the allowed window are grayed out and unselectable.</div>
+                        <div class="card-constraints" id="chips-booking"></div>
+                        <input id="booking" />
+                        <div class="card-output" id="out-booking">No date selected yet</div>
+                    </div>
+
+                    <div class="demo-card card-biz">
+                        <div class="card-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <div class="card-title">Business Hours</div>
+                        <div class="card-desc">Time slots outside working hours are dimmed. Drag is clamped to the allowed window.</div>
+                        <div class="card-constraints" id="chips-biz"></div>
+                        <input id="biz-event" />
+                        <div class="card-output" id="out-biz">No event selected yet</div>
+                    </div>
+
+                </div>
+            </div>
+
         </section>
 
         <footer class="footer">
@@ -351,7 +426,7 @@
                 const fmtDate = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                 const fmtTime = d => d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
                 if (Array.isArray(v)) {
-                    if (id === "event") {
+                    if (id === "event" || id === "biz") {
                         el.textContent = fmtDate(v[0]) + " · " + fmtTime(v[0]) + " – " + fmtTime(v[1]);
                     } else {
                         el.textContent = fmtDate(v[0]) + " → " + fmtDate(v[1]);
@@ -390,6 +465,56 @@
                 mode: "event",
                 color: "#10b981",
                 onChange: v => setOut("event", v),
+            });
+
+            // Constrained pickers
+            function addChip(containerId, key, value) {
+                const wrap = document.getElementById(containerId);
+                const chip = document.createElement("span");
+                chip.className = "constraint-chip";
+                chip.innerHTML = `<span class="chip-key">${key}</span>${value}`;
+                wrap.appendChild(chip);
+            }
+
+            function fmtShort(d) {
+                return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const bookingMax = new Date(today);
+            bookingMax.setDate(today.getDate() + 30);
+
+            addChip("chips-booking", "minDate", fmtShort(today));
+            addChip("chips-booking", "maxDate", fmtShort(bookingMax));
+
+            const p5 = new Matai("#booking", {
+                lang: ["en", "he"],
+                mode: "date",
+                color: "#8b5cf6",
+                minDate: today,
+                maxDate: bookingMax,
+                onChange: v => setOut("booking", v),
+            });
+
+            const bizMin = 9, bizMax = 17;
+            const bizDateMax = new Date(today);
+            bizDateMax.setDate(today.getDate() + 14);
+
+            addChip("chips-biz", "minDate", fmtShort(today));
+            addChip("chips-biz", "maxDate", fmtShort(bizDateMax));
+            addChip("chips-biz", "minHour", bizMin + ":00");
+            addChip("chips-biz", "maxHour", bizMax + ":00");
+
+            const p6 = new Matai("#biz-event", {
+                lang: ["en", "he"],
+                mode: "event",
+                color: "#f59e0b",
+                minDate: today,
+                maxDate: bizDateMax,
+                minHour: bizMin,
+                maxHour: bizMax,
+                onChange: v => setOut("biz", v),
             });
         </script>
     </body>

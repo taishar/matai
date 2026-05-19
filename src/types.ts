@@ -79,4 +79,8 @@ export interface MataiOptions {
   onChange?: (value: DateValue, close: () => void) => void;
   placeholder?: string;
   color?: string;
+  minDate?: Date;
+  maxDate?: Date;
+  minHour?: number;
+  maxHour?: number;
 }
