@@ -224,6 +224,9 @@ export class Calendar {
             this.selectCallback?.(new Date(cell.dataset.date + "T00:00:00"));
             setTimeout(() => { delete grid.dataset.suppressClick; }, 0);
           }
+        } else {
+          // e.preventDefault() in pointerdown suppressed the click event, handle it here
+          this.selectCallback?.(dragStartDate);
         }
         dragStartDate = null;
         dragging = false;
