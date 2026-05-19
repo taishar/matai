@@ -650,3 +650,44 @@ describe("parseWithAutoDetect", () => {
     expect(parseWithAutoDetect("", [en, he], "single")).toBeNull();
   });
 });
+
+// ---- datetime mode ----
+
+function dt(year: number, month: number, day: number, hour: number, minute: number): Date {
+  return new Date(year, month - 1, day, hour, minute, 0, 0);
+}
+
+describe("datetime/EN - date + time", () => {
+  test("2024-06-15 14:30 (HH:MM)", () =>
+    expect(parse("2024-06-15 14:30", en, "datetime")).toEqual(dt(2024, 6, 15, 14, 30)));
+  test("2024-06-15 3pm (Hpm, no space)", () =>
+    expect(parse("2024-06-15 3pm", en, "datetime")).toEqual(dt(2024, 6, 15, 15, 0)));
+  test("2024-06-15 3:30pm (H:MMpm, no space)", () =>
+    expect(parse("2024-06-15 3:30pm", en, "datetime")).toEqual(dt(2024, 6, 15, 15, 30)));
+  test("2024-06-15 16 (bare 24h integer)", () =>
+    expect(parse("2024-06-15 16", en, "datetime")).toEqual(dt(2024, 6, 15, 16, 0)));
+});
+
+// ---- event mode ----
+
+describe("event/EN - date + time range", () => {
+  test("2024-06-15 14:00 - 16:00 (HH:MM range)", () => {
+    const result = parse("2024-06-15 14:00 - 16:00", en, "event") as [Date, Date];
+    expect(result[0]).toEqual(dt(2024, 6, 15, 14, 0));
+    expect(result[1]).toEqual(dt(2024, 6, 15, 16, 0));
+  });
+  test("tomorrow 3pm - 5pm (am/pm range)", () => {
+    const T = today();
+    const tom = addDays(T, 1);
+    const result = parse("tomorrow 3pm - 5pm", en, "event") as [Date, Date];
+    expect(result[0]).toEqual(new Date(tom.getFullYear(), tom.getMonth(), tom.getDate(), 15, 0, 0, 0));
+    expect(result[1]).toEqual(new Date(tom.getFullYear(), tom.getMonth(), tom.getDate(), 17, 0, 0, 0));
+  });
+  test("tomorrow 16 - 18 (bare 24h integers)", () => {
+    const T = today();
+    const tom = addDays(T, 1);
+    const result = parse("tomorrow 16 - 18", en, "event") as [Date, Date];
+    expect(result[0]).toEqual(new Date(tom.getFullYear(), tom.getMonth(), tom.getDate(), 16, 0, 0, 0));
+    expect(result[1]).toEqual(new Date(tom.getFullYear(), tom.getMonth(), tom.getDate(), 18, 0, 0, 0));
+  });
+});

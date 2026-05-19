@@ -44,6 +44,8 @@ function parseTime(s: string): number | null {
   }
   m = lower.match(/^(\d{1,2})h$/);
   if (m) { const h = +m[1]; if (h <= 23) return h * 60; }
+  m = lower.match(/^(\d{1,2})$/);
+  if (m) { const h = +m[1]; if (h <= 23) return h * 60; }
   return null;
 }
 
