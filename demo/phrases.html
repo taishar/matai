@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Matai — Phrase Reference</title>
+        <style>
+            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+            body {
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: #f7f6ff;
+                color: #111;
+            }
+
+            /* ── HEADER ──────────────────────────────── */
+            .header {
+                background: linear-gradient(135deg, #6c63ff 0%, #f64f59 65%, #ff9a3c 100%);
+                padding: 60px 24px 56px;
+                text-align: center;
+                position: relative;
+            }
+            .header::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background:
+                    radial-gradient(ellipse 60% 70% at 18% 55%, rgba(255,255,255,0.09) 0%, transparent 100%),
+                    radial-gradient(ellipse 45% 45% at 82% 18%, rgba(255,255,255,0.06) 0%, transparent 100%);
+                pointer-events: none;
+            }
+            .back-link {
+                position: absolute;
+                top: 22px;
+                left: 24px;
+                color: rgba(255,255,255,0.72);
+                text-decoration: none;
+                font-size: 0.875rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                transition: color 0.2s;
+                position: relative;
+                z-index: 1;
+                display: inline-flex;
+            }
+            .header-nav {
+                position: absolute;
+                top: 22px;
+                left: 24px;
+                z-index: 1;
+            }
+            .back-link:hover { color: #fff; }
+            .header-eyebrow {
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: rgba(255,255,255,0.65);
+                margin-bottom: 16px;
+                position: relative;
+            }
+            .header-title {
+                font-size: clamp(2rem, 5vw, 3.6rem);
+                font-weight: 800;
+                color: #fff;
+                line-height: 1.08;
+                letter-spacing: -0.03em;
+                margin-bottom: 14px;
+                position: relative;
+            }
+            .header-sub {
+                font-size: 1rem;
+                color: rgba(255,255,255,0.8);
+                line-height: 1.6;
+                position: relative;
+            }
+
+            /* ── CONTENT ─────────────────────────────── */
+            .content {
+                max-width: 860px;
+                margin: 0 auto;
+                padding: 64px 24px 96px;
+                display: flex;
+                flex-direction: column;
+                gap: 52px;
+            }
+
+            /* ── SECTION ─────────────────────────────── */
+            .section-type {
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                margin-bottom: 6px;
+            }
+            .type-single { color: #a78bfa; }
+            .type-range  { color: #f64f59; }
+
+            .section-title {
+                font-size: 1.25rem;
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                color: #111;
+                margin-bottom: 4px;
+            }
+            .section-note {
+                font-size: 0.875rem;
+                color: #6b7280;
+                line-height: 1.65;
+                margin-bottom: 18px;
+            }
+
+            /* ── TABLE ───────────────────────────────── */
+            .phrase-table {
+                width: 100%;
+                border-collapse: collapse;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 28px rgba(0,0,0,0.07);
+                background: #fff;
+            }
+            .phrase-table thead {
+                background: #f5f3ff;
+            }
+            .phrase-table thead th {
+                padding: 11px 20px;
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: #7c3aed;
+            }
+            .phrase-table thead th.col-en { text-align: left; width: 50%; }
+            .phrase-table thead th.col-he { text-align: right; width: 50%; }
+
+            .phrase-table tbody tr {
+                border-top: 1px solid #f3f4f6;
+            }
+            .phrase-table tbody tr:first-child { border-top: none; }
+            .phrase-table tbody tr:hover { background: #faf9ff; }
+
+            .phrase-table td {
+                padding: 10px 20px;
+                vertical-align: middle;
+            }
+            .phrase-table td.col-en { width: 50%; }
+            .phrase-table td.col-he { width: 50%; text-align: right; }
+
+            /* ── CHIPS ───────────────────────────────── */
+            .chip {
+                display: inline-block;
+                font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+                font-size: 0.82rem;
+                padding: 3px 9px;
+                border-radius: 6px;
+                margin: 2px 2px 2px 0;
+                white-space: nowrap;
+            }
+            .chip-en {
+                background: #ede9fe;
+                color: #5b21b6;
+            }
+            .chip-he {
+                background: #fff0f3;
+                color: #9d174d;
+                margin: 2px 0 2px 2px;
+            }
+            .row-note {
+                font-size: 0.78rem;
+                color: #9ca3af;
+                display: block;
+                margin-top: 3px;
+                font-style: italic;
+            }
+            .none {
+                color: #d1d5db;
+                font-size: 0.95rem;
+            }
+
+            /* ── FOOTER ──────────────────────────────── */
+            .footer {
+                text-align: center;
+                padding: 32px 24px;
+                font-size: 0.8rem;
+                color: #c4b5fd;
+                border-top: 1px solid #ede9fe;
+                background: #fff;
+            }
+            .footer a {
+                color: #a78bfa;
+                text-decoration: none;
+            }
+            .footer a:hover { text-decoration: underline; }
+
+            @media (max-width: 560px) {
+                .chip { font-size: 0.75rem; padding: 2px 7px; }
+                .phrase-table td { padding: 9px 14px; }
+            }
+        </style>
+    </head>
+    <body>
+
+        <header class="header">
+            <div class="header-nav">
+                <a class="back-link" href="index.html">← Demo</a>
+            </div>
+            <p class="header-eyebrow">matai &nbsp; מתי</p>
+            <h1 class="header-title">Phrase Reference</h1>
+            <p class="header-sub">Every expression matai understands — English and Hebrew.</p>
+        </header>
+
+        <main class="content">
+
+            <!-- ── 1. Fixed Points ── -->
+            <section>
+                <p class="section-type type-single">Single Date</p>
+                <h2 class="section-title">Fixed Points</h2>
+                <p class="section-note">Words that resolve to a single day relative to now.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">today</span>
+                                <span class="chip chip-en">now</span>
+                            </td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">היום</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">tomorrow</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">מחר</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">yesterday</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">אתמול</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="none">—</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">מחרתיים</span>
+                                <span class="row-note">day after tomorrow (Hebrew only)</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 2. Future Offsets ── -->
+            <section>
+                <p class="section-type type-single">Single Date</p>
+                <h2 class="section-title">Future Offsets</h2>
+                <p class="section-note">N units forward from today. Replace <em>N</em> with any number or spelled-out word (e.g. <em>three</em> / <em>שלושה</em>).</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">in 3 days</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">בעוד 3 ימים</span>
+                                <span class="chip chip-he">עוד 3 ימים</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">in 2 weeks</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">בעוד 2 שבועות</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">in 1 month</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">בעוד 1 חודש</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">in 1 year</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">בעוד 1 שנה</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="none">—</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">שבועיים</span>
+                                <span class="row-note">exactly two weeks (Hebrew dual form)</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="none">—</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">חודשיים</span>
+                                <span class="row-note">exactly two months (Hebrew dual form)</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 3. Past Offsets ── -->
+            <section>
+                <p class="section-type type-single">Single Date</p>
+                <h2 class="section-title">Past Offsets</h2>
+                <p class="section-note">N units backward from today. In Hebrew, <em>לפני</em> precedes the count and unit.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">3 days ago</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">לפני 3 ימים</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">2 weeks ago</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">לפני 2 שבועות</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">1 month ago</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">לפני 1 חודש</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">1 year ago</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">לפני 1 שנה</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 4. Weekdays ── -->
+            <section>
+                <p class="section-type type-single">Single Date</p>
+                <h2 class="section-title">Weekdays</h2>
+                <p class="section-note">Any day name can be used. In Hebrew the direction word is a suffix after the day.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">next Monday</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">שני הבא</span>
+                                <span class="chip chip-he">שני הקרוב</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last Friday</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">שישי האחרון</span>
+                                <span class="chip chip-he">שישי הקודם</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">next Sunday</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">ביום ראשון</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">next Wednesday</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">רביעי הבא</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last Thursday</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">חמישי האחרון</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 5. Named Date Ranges ── -->
+            <section>
+                <p class="section-type type-range">Date Range</p>
+                <h2 class="section-title">Named Date Ranges</h2>
+                <p class="section-note">Complete calendar periods — the full week, month, year, or quarter.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">this week</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">השבוע</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last week</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">שבוע שעבר</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">next week</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">שבוע הבא</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">this month</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">החודש</span>
+                                <span class="chip chip-he">חודש זה</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last month</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">חודש שעבר</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">next month</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">חודש הבא</span>
+                                <span class="chip chip-he">החודש הבא</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">this year</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">השנה</span>
+                                <span class="chip chip-he">שנה זו</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last year</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">שנה שעברה</span>
+                                <span class="chip chip-he">השנה שעברה</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">next year</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">שנה הבאה</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">this quarter</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">הרבעון</span>
+                                <span class="chip chip-he">הרבעון הזה</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last quarter</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">רבעון שעבר</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">next quarter</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">רבעון הבא</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 6. Rolling Ranges ── -->
+            <section>
+                <p class="section-type type-range">Date Range</p>
+                <h2 class="section-title">Rolling Ranges</h2>
+                <p class="section-note">A sliding window ending (or starting) at today. In Hebrew, the suffix goes after the noun — past uses <em>האחרונים / אחרונים</em>, future uses <em>הבאים</em>.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last 30 days</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">30 ימים האחרונים</span>
+                                <span class="chip chip-he">30 ימים אחרונים</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last 3 weeks</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">3 שבועות האחרונים</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last 6 months</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">6 חודשים האחרונים</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last 2 years</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">2 שנים האחרונות</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">past 90 days</span>
+                                <span class="chip chip-en">rolling 90 days</span>
+                                <span class="chip chip-en">trailing 90 days</span>
+                                <span class="chip chip-en">over the last 90 days</span>
+                            </td>
+                            <td class="col-he" dir="rtl"><span class="none">—</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">next 7 days</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">7 ימים הבאים</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">next 3 months</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">3 חודשים הבאים</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 7. Weekend ── -->
+            <section>
+                <p class="section-type type-range">Date Range</p>
+                <h2 class="section-title">Weekend</h2>
+                <p class="section-note">In English: Saturday–Sunday. In Hebrew: Friday–Saturday.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">weekend</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">סוף השבוע</span>
+                                <span class="chip chip-he">סופ"ש</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 8. Quarters ── -->
+            <section>
+                <p class="section-type type-range">Date Range</p>
+                <h2 class="section-title">Quarters</h2>
+                <p class="section-note">Defaults to the current year when no year is given.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">Q1</span></td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">רבעון ראשון</span>
+                                <span class="chip chip-he">רבעון 1</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">Q2</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">רבעון שני</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">Q3</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">רבעון שלישי</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">Q4</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">רבעון רביעי</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">Q1 2024</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">רבעון ראשון 2024</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 9. Half-Year ── -->
+            <section>
+                <p class="section-type type-range">Date Range</p>
+                <h2 class="section-title">Half-Year</h2>
+                <p class="section-note">Defaults to the current year.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">H1</span>
+                                <span class="chip chip-en">first half</span>
+                            </td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מחצית ראשונה</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">H2</span>
+                                <span class="chip chip-en">second half</span>
+                            </td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מחצית שנייה</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">first half of 2024</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מחצית ראשונה 2024</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">H2 2024</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מחצית שנייה 2024</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 10. Period-to-Date ── -->
+            <section>
+                <p class="section-type type-range">Date Range</p>
+                <h2 class="section-title">Period-to-Date</h2>
+                <p class="section-note">From the start of the current period to today.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">year to date</span>
+                                <span class="chip chip-en">YTD</span>
+                            </td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מתחילת השנה</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">month to date</span>
+                                <span class="chip chip-en">MTD</span>
+                            </td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מתחילת החודש</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">quarter to date</span>
+                                <span class="chip chip-en">QTD</span>
+                            </td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מתחילת הרבעון</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 11. Calendar Months ── -->
+            <section>
+                <p class="section-type type-range">Date Range</p>
+                <h2 class="section-title">Calendar Months</h2>
+                <p class="section-note">Resolves to the full calendar month. In Hebrew a year is always required; in English it defaults to the current year. Short forms (Jan, Feb…) are accepted in both languages.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">January</span>
+                                <span class="chip chip-en">Jan</span>
+                            </td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">ינואר 2024</span>
+                                <span class="row-note">year required in Hebrew</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">March 2024</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מרץ 2024</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">Sep 2025</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">ספט׳ 2025</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">December 2023</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">דצמבר 2023</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 12. Period Start & End ── -->
+            <section>
+                <p class="section-type type-single">Single Date</p>
+                <h2 class="section-title">Period Start &amp; End</h2>
+                <p class="section-note">Resolves to the first or last day of any named period.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">start of this month</span>
+                                <span class="chip chip-en">beginning of this month</span>
+                            </td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">תחילת החודש</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">start of next year</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">תחילת שנה הבאה</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">end of last month</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">סוף חודש שעבר</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">end of next year</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">סוף שנה הבאה</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">end of this week</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">סוף השבוע</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 13. Nth Weekday of Month ── -->
+            <section>
+                <p class="section-type type-single">Single Date</p>
+                <h2 class="section-title">Nth Weekday of Month</h2>
+                <p class="section-note">In English: ordinal before the day name. In Hebrew: day name first, ordinal as a suffix.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">first Monday of March</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">שני הראשון של מרץ</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">second Friday of January</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">שישי השני של ינואר</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">third Tuesday of June</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">שלישי השלישי של יוני</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">fourth Wednesday of October</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">רביעי הרביעי של אוקטובר</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">last Sunday of December</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">ראשון האחרון של דצמבר</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 14. Specific Dates ── -->
+            <section>
+                <p class="section-type type-single">Single Date</p>
+                <h2 class="section-title">Specific Dates</h2>
+                <p class="section-note">Numeric and text formats for exact dates. ISO 8601 (YYYY-MM-DD) and DD.MM.YYYY are accepted in both locales. English uses M/D/Y order; Hebrew uses D/M/Y.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">Jan 15</span>
+                                <span class="chip chip-en">January 15</span>
+                            </td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">15 ינואר</span>
+                                <span class="chip chip-he">ה-15 בינואר</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">January 15 2024</span>
+                                <span class="chip chip-en">Jan 15 2024</span>
+                            </td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">15 ינואר 2024</span>
+                                <span class="chip chip-he">ה-15 בינואר 2024</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">01/15/2024</span>
+                                <span class="row-note">M/D/Y order</span>
+                            </td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">15/01/2024</span>
+                                <span class="row-note">D/M/Y order</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en">
+                                <span class="chip chip-en">2024-01-15</span>
+                                <span class="row-note">ISO 8601</span>
+                            </td>
+                            <td class="col-he" dir="rtl">
+                                <span class="chip chip-he">2024-01-15</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">15.01.2024</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">15.01.2024</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ── 15. Range Syntax ── -->
+            <section>
+                <p class="section-type type-range">Date Range</p>
+                <h2 class="section-title">Range Syntax</h2>
+                <p class="section-note">Combine any two date expressions with a connector to form a custom range.</p>
+                <table class="phrase-table">
+                    <thead>
+                        <tr>
+                            <th class="col-en">English</th>
+                            <th class="col-he">עברית</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">from Jan 1 to Jan 31</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מ-1 ינואר עד 31 ינואר</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">Jan 1 to Jan 31</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">1 ינואר עד 31 ינואר</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">between next Monday and next Friday</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">בין שני הבא ל-שישי הבא</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">tomorrow to next Friday</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">מחר - שישי הבא</span></td>
+                        </tr>
+                        <tr>
+                            <td class="col-en"><span class="chip chip-en">Jan 1 - Jan 31</span></td>
+                            <td class="col-he" dir="rtl"><span class="chip chip-he">1 ינואר - 31 ינואר</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+        </main>
+
+        <footer class="footer">
+            <a href="index.html">← back to demo</a>
+            &nbsp;·&nbsp;
+            matai &nbsp; מתי &mdash; natural language date picker
+        </footer>
+
+    </body>
+</html>
