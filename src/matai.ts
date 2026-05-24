@@ -250,12 +250,6 @@ export class Matai {
       calWrapper.appendChild(this.calStart.getElement());
       calWrapper.appendChild(this.calEnd.getElement());
       this.popup.appendChild(calWrapper);
-
-      this.badgeEl = document.createElement("div");
-      this.badgeEl.className = "matai-range-badge";
-      this.badgeEl.style.display = "none";
-      this.badgeEl.appendChild(document.createElement("span"));
-      this.popup.appendChild(this.badgeEl);
     } else if (this.mode === "datetime" || this.mode === "event") {
       const tcMode = this.mode === "datetime" ? "single" : "range";
       this.timeColumn = new TimeColumn(
@@ -275,10 +269,12 @@ export class Matai {
       this.popup.appendChild(this.calStart.getElement());
     }
 
-    this.errorEl = document.createElement("div");
-    this.errorEl.className = "matai-error";
-    this.errorEl.appendChild(document.createElement("span"));
-    this.popup.appendChild(this.errorEl);
+    const footerEl = document.createElement("div");
+    footerEl.style.display = "none";
+    footerEl.appendChild(document.createElement("span"));
+    this.popup.appendChild(footerEl);
+    this.badgeEl = footerEl;
+    this.errorEl = footerEl;
 
     this.wrapper.appendChild(this.input);
     this.wrapper.appendChild(this.popup);
@@ -367,6 +363,7 @@ export class Matai {
     if (!this.badgeEl) return;
     if (!start || !end) { this.badgeEl.style.display = "none"; return; }
     const days = daysBetween(start, end);
+    this.badgeEl.className = "matai-range-badge";
     this.badgeEl.querySelector("span")!.textContent = formatRangeDays(days, this.activeLocale());
     this.badgeEl.style.display = "block";
   }
@@ -424,14 +421,14 @@ export class Matai {
 
   private showError(msg: string): void {
     if (!this.errorEl) return;
-    const span = this.errorEl.querySelector("span")!;
-    span.textContent = msg;
-    span.style.visibility = "visible";
+    this.errorEl.className = "matai-error";
+    this.errorEl.querySelector("span")!.textContent = msg;
+    this.errorEl.style.display = "flex";
   }
 
   private clearError(): void {
     if (!this.errorEl) return;
-    this.errorEl.querySelector("span")!.style.visibility = "hidden";
+    this.errorEl.style.display = "none";
   }
 
   private handleInput(): void {

@@ -223,9 +223,8 @@
 
 .matai-time-slot[data-disabled="1"] { opacity: 0.3; cursor: default; }
 
-.matai-error { display: flex; align-items: center; justify-content: center; margin-top: 10px; height: 26px; }
+.matai-error { display: flex; align-items: center; justify-content: center; margin-top: 10px; }
 .matai-error span {
-  visibility: hidden;
   display: inline-flex;
   align-items: center;
   background: #fef1f5;
